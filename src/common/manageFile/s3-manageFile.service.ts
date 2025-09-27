@@ -23,7 +23,17 @@ export class S3Service extends ManageFileService {
   }
 
   async uploadFile(file: Express.Multer.File, key: string) {
+    const DISABLE_MANAGE_FILE =
+      this.configService.get<string>('DISABLE_MANAGE_FILE') === '1';
     const S3_BUCKET = this.configService.get<string>('S3_BUCKET');
+
+    if (DISABLE_MANAGE_FILE) {
+      this.logger.log(
+        `File management is disabled. Skipping S3 upload for key: ${key}`,
+      );
+
+      return `https://${S3_BUCKET}.s3.${this.region}.amazonaws.com/${key}`;
+    }
 
     const input: PutObjectCommandInput = {
       Body: file.buffer,
