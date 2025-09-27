@@ -22,6 +22,19 @@ export class UserService {
     private readonly manageFile: ManageFileService,
   ) {}
 
+  async findOneByOrFail(userData: Partial<User>) {
+    const user = await this.userRepository.findOne({
+      where: userData,
+      relations: ['providerProfile'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async create(createUserDto: CreateUserDto) {
     const user: User = new User();
 
@@ -92,29 +105,8 @@ export class UserService {
     return user;
   }
 
-  findByEmail(email: string) {
-    return this.userRepository.findOneBy({ email });
-  }
-
-  findById(id: string) {
-    return this.userRepository.findOneBy({ id });
-  }
-
-  async findOneByOrFail(userData: Partial<User>) {
-    const user = await this.userRepository.findOne({
-      where: userData,
-      relations: ['providerProfile'],
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
-  }
-
   async uploadAvatar(userId: string, file: Express.Multer.File) {
-    const user = await this.userRepository.findOneBy({ id: userId });
+    const user = await this.findOneByOrFail({ id: userId });
 
     if (!user) {
       throw new NotFoundException('User not found');
