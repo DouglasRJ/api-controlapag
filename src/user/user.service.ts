@@ -101,7 +101,10 @@ export class UserService {
   }
 
   async findOneByOrFail(userData: Partial<User>) {
-    const user = await this.userRepository.findOneBy(userData);
+    const user = await this.userRepository.findOne({
+      where: userData,
+      relations: ['providerProfile'],
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');

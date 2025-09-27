@@ -2,10 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from '../enum/user-role.enum';
+import { Provider } from '../../provider/entities/provider.entity';
+import { USER_ROLE } from '../enum/user-role.enum';
 
 @Entity()
 export class User {
@@ -21,8 +23,8 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ type: 'enum', enum: UserRole })
-  role: UserRole;
+  @Column({ type: 'enum', enum: USER_ROLE })
+  role: USER_ROLE;
 
   @Column({
     type: 'text',
@@ -35,4 +37,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToOne(() => Provider, provider => provider.user, { nullable: true })
+  providerProfile: Provider;
 }

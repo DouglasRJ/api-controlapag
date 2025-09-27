@@ -1,30 +1,48 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ProviderService } from './provider.service';
-import { CreateProviderDto } from './dto/create-provider.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
+import { ProviderResponseDto } from './dto/provider-response.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { ProviderService } from './provider.service';
 
 @Controller('provider')
 export class ProviderController {
   constructor(private readonly providerService: ProviderService) {}
-
-  @Post()
-  create(@Body() createProviderDto: CreateProviderDto) {
-    return this.providerService.create(createProviderDto);
-  }
-
   @Get()
-  findAll() {
-    return this.providerService.findAll();
+  async findAll() {
+    const providers = await this.providerService.findAll();
+    return providers.map(p => new ProviderResponseDto(p));
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.providerService.findOne(+id);
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  async findOne(@Req() req: AuthenticatedRequest) {
+    const provider = await this.providerService.findOne(req.user.id);
+    return new ProviderResponseDto(provider);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProviderDto: UpdateProviderDto) {
-    return this.providerService.update(+id, updateProviderDto);
+  async update(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() updateProviderDto: UpdateProviderDto,
+  ) {
+    const provider = await this.providerService.update(
+      id,
+      req.user.id,
+      updateProviderDto,
+    );
+    return new ProviderResponseDto(provider);
   }
 
   @Delete(':id')
