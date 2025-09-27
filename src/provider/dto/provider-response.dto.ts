@@ -2,7 +2,7 @@ import { Provider } from '../entities/provider.entity';
 import { PROVIDER_STATUS } from '../enum/provider-status.enum';
 
 export class ProviderResponseDto {
-  readonly providerId: string;
+  readonly id: string;
   readonly title: string;
   readonly bio: string;
   readonly businessPhone: string;
@@ -12,7 +12,7 @@ export class ProviderResponseDto {
   readonly updatedAt: Date;
 
   constructor(provider: Provider) {
-    this.providerId = provider.id;
+    this.id = provider.id;
     this.title = provider.title;
     this.bio = provider.bio;
     this.businessPhone = provider.businessPhone;

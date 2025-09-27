@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { CreateClientDto } from 'src/client/dto/create-client.dto';
+import { Client } from 'src/client/entities/client.entity';
 import { HashService } from 'src/common/hash/hash.service';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { Provider } from 'src/provider/entities/provider.entity';
@@ -32,11 +34,9 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const error = new UnauthorizedException('Email or Password incorrect');
 
-    const user = await this.userService.findByEmail(loginDto.email);
-
-    if (!user) {
-      throw error;
-    }
+    const user = await this.userService.findOneByOrFail({
+      email: loginDto.email,
+    });
 
     const isPasswordCorrect = await this.hashService.compare(
       loginDto.password,
@@ -96,6 +96,29 @@ export class AuthService {
         return newProviderProfile;
       } catch (error) {
         throw new BadRequestException(`Provider not created: ${error}`);
+      }
+    });
+  }
+
+  async createClient(createUserDto: CreateClientDto) {
+    return this.dataSource.transaction(async transactionalEntityManager => {
+      try {
+        const newUser = await this._createUser(
+          createUserDto,
+          USER_ROLE.CLIENT,
+          transactionalEntityManager,
+        );
+
+        const newClientProfile = transactionalEntityManager.create(Client, {
+          phone: createUserDto.phone,
+          address: createUserDto.address,
+          user: newUser,
+        });
+        await transactionalEntityManager.save(newClientProfile);
+
+        return newClientProfile;
+      } catch (error) {
+        throw new BadRequestException(`Client not created: ${error}`);
       }
     });
   }

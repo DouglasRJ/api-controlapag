@@ -1,3 +1,4 @@
+import { Client } from 'src/client/entities/client.entity';
 import {
   Column,
   CreateDateColumn,
@@ -40,4 +41,7 @@ export class User {
 
   @OneToOne(() => Provider, provider => provider.user, { nullable: true })
   providerProfile: Provider;
+
+  @OneToOne(() => Client, client => client.user, { nullable: true })
+  clientProfile: Client;
 }
