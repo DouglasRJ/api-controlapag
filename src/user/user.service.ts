@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HashService } from 'src/common/hash/hash.service';
+import { ManageFileService } from 'src/common/manageFile/manageFile.service';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -18,6 +19,7 @@ export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly hashService: HashService,
+    private readonly manageFile: ManageFileService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -106,5 +108,23 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    const user = await this.userRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const AVATAR_PATH = '/users/avatars/';
+    const key = `${AVATAR_PATH}${file.fieldname}${Date.now()}`;
+
+    const fileUrl = await this.manageFile.uploadFile(file, key);
+
+    user.image = fileUrl;
+
+    const updated = await this.userRepository.save(user);
+    return updated;
   }
 }

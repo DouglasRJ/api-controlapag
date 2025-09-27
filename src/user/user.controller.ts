@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,9 +7,12 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
@@ -23,6 +27,22 @@ export class UserController {
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     const user = await this.userService.create(createUserDto);
+
+    return new UserResponseDto(user);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('/avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!file) {
+      throw new BadRequestException('File is missing');
+    }
+
+    const user = await this.userService.uploadAvatar(req.user.id, file);
     return new UserResponseDto(user);
   }
 
@@ -64,7 +84,8 @@ export class UserController {
 
   @UseGuards(AuthGuard('jwt'))
   @Delete('me')
-  remove(@Req() req: AuthenticatedRequest) {
-    return this.userService.remove(req.user.id);
+  async remove(@Req() req: AuthenticatedRequest) {
+    const user = await this.userService.remove(req.user.id);
+    return new UserResponseDto(user);
   }
 }
