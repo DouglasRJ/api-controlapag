@@ -20,10 +20,17 @@ export class ProviderService {
     private readonly userService: UserService,
   ) {}
 
-  async findOneByOrFail(providerData: Partial<Provider>) {
+  async findOneByOrFail(
+    providerData: Partial<Provider>,
+    getEnrollments = false,
+  ) {
     const provider = await this.providerRepository.findOne({
       where: providerData,
-      relations: ['user', 'services'],
+      relations: [
+        'user',
+        'services',
+        ...(getEnrollments ? ['services.enrollments'] : []),
+      ],
     });
 
     if (!provider) {
@@ -67,9 +74,12 @@ export class ProviderService {
       throw new BadRequestException('User not have Provider Profile');
     }
 
-    const provider = await this.findOneByOrFail({
-      id: user.providerProfile.id,
-    });
+    const provider = await this.findOneByOrFail(
+      {
+        id: user.providerProfile.id,
+      },
+      true,
+    );
 
     return provider;
   }

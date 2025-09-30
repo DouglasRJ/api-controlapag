@@ -1,0 +1,46 @@
+import { Service } from 'src/services/entities/service.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
+
+@Entity()
+export class Enrollments {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({
+    type: 'decimal',
+    scale: 2,
+  })
+  price: number;
+
+  @Column({ type: 'date' })
+  startDate: Date;
+
+  @Column({ type: 'date', nullable: true })
+  endDate?: Date;
+
+  @Column({
+    type: 'enum',
+    enum: ENROLLMENT_STATUS,
+    default: ENROLLMENT_STATUS.ACTIVE,
+  })
+  status: ENROLLMENT_STATUS;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @ManyToOne(() => Service, service => service.enrollments)
+  @JoinColumn({ name: 'serviceId' })
+  service: Service;
+}

@@ -1,3 +1,4 @@
+import { Enrollments } from 'src/enrollments/entities/enrollment.entity';
 import { Provider } from 'src/provider/entities/provider.entity';
 import {
   Column,
@@ -5,6 +6,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -39,4 +41,9 @@ export class Service {
   @ManyToOne(() => Provider, provider => provider.services)
   @JoinColumn({ name: 'providerId' })
   provider: Provider;
+
+  @OneToMany(() => Enrollments, enrollments => enrollments.service, {
+    cascade: true,
+  })
+  enrollments: Enrollments[];
 }

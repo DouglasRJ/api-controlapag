@@ -1,3 +1,4 @@
+import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
 import { Service } from '../entities/service.entity';
 
 export class ServiceResponseDto {
@@ -9,6 +10,10 @@ export class ServiceResponseDto {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
+  readonly providerId?: string;
+
+  readonly enrollments?: EnrollmentsResponseDto[];
+
   constructor(service: Service) {
     this.id = service.id;
     this.name = service.name;
@@ -17,5 +22,15 @@ export class ServiceResponseDto {
     this.isActive = service.isActive;
     this.createdAt = service.createdAt;
     this.updatedAt = service.updatedAt;
+
+    if (service.enrollments) {
+      this.enrollments = service.enrollments.map(
+        e => new EnrollmentsResponseDto(e),
+      );
+    }
+
+    if (service.provider) {
+      this.providerId = service.provider.id;
+    }
   }
 }

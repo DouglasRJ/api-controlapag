@@ -10,6 +10,7 @@ import { ClientModule } from './client/client.module';
 import { ProviderModule } from './provider/provider.module';
 import { UserModule } from './user/user.module';
 import { ServicesModule } from './services/services.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ServicesModule } from './services/services.module';
     ProviderModule,
     ClientModule,
     ServicesModule,
+    EnrollmentsModule,
   ],
   controllers: [AppController],
   providers: [

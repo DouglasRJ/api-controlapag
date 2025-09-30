@@ -22,7 +22,7 @@ export class ServicesService {
   async findOneByOrFail(serviceData: Partial<Service>) {
     const service = await this.serviceRepository.findOne({
       where: serviceData,
-      relations: ['provider'],
+      relations: ['provider', 'enrollments'],
     });
 
     if (!service) {
@@ -62,10 +62,6 @@ export class ServicesService {
 
   async findOne({ id }: { id: string }) {
     const service = await this.findOneByOrFail({ id });
-
-    if (!service) {
-      throw new NotFoundException('Service not exists');
-    }
 
     return service;
   }
