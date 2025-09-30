@@ -17,6 +17,8 @@ import { UpdateClientDto } from './dto/update-client.dto';
 @Controller('client')
 export class ClientController {
   constructor(private readonly clientService: ClientService) {}
+
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async findAll() {
     const clients = await this.clientService.findAll();
@@ -26,7 +28,7 @@ export class ClientController {
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   async findOne(@Req() req: AuthenticatedRequest) {
-    const client = await this.clientService.findOne(req.user.id);
+    const client = await this.clientService.findOne({ userId: req.user.id });
     return new ClientResponseDto(client);
   }
 
@@ -37,16 +39,21 @@ export class ClientController {
     @Req() req: AuthenticatedRequest,
     @Body() updateClientDto: UpdateClientDto,
   ) {
-    const client = await this.clientService.update(
-      id,
-      req.user.id,
+    const client = await this.clientService.update({
+      clientId: id,
+      userId: req.user.id,
       updateClientDto,
-    );
+    });
     return new ClientResponseDto(client);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.clientService.remove(+id);
+  async remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    const client = await this.clientService.remove({
+      userId: req.user.id,
+      clientId: id,
+    });
+    return new ClientResponseDto(client);
   }
 }

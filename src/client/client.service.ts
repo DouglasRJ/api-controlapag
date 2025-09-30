@@ -32,7 +32,13 @@ export class ClientService {
     return user;
   }
 
-  async create(userId: string, createClientDto: CreateClientDto) {
+  async create({
+    userId,
+    createClientDto,
+  }: {
+    userId: string;
+    createClientDto: CreateClientDto;
+  }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     const client: Client = new Client();
@@ -49,7 +55,7 @@ export class ClientService {
     return this.clientRepository.find();
   }
 
-  async findOne(userId: string) {
+  async findOne({ userId }: { userId: string }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     if (!user.clientProfile) {
@@ -59,18 +65,16 @@ export class ClientService {
     return user.clientProfile;
   }
 
-  async update(
-    clientId: string,
-    userId: string,
-    updateClientDto: UpdateClientDto,
-  ) {
-    const user = await this.userService.findOneByOrFail({ id: userId });
-
-    if (!user.clientProfile || user.clientProfile.id !== clientId) {
-      throw new UnauthorizedException('Not your client profile');
-    }
-
-    const client = await this.findOneByOrFail({ id: clientId });
+  async update({
+    clientId,
+    userId,
+    updateClientDto,
+  }: {
+    clientId: string;
+    userId: string;
+    updateClientDto: UpdateClientDto;
+  }) {
+    const client = await this.checkClientOwnership({ clientId, userId });
 
     client.address = updateClientDto.address ?? client.address;
     client.phone = updateClientDto.phone ?? client.phone;
@@ -79,7 +83,27 @@ export class ClientService {
     return updated;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} client`;
+  async remove({ clientId, userId }: { clientId: string; userId: string }) {
+    const client = await this.checkClientOwnership({ clientId, userId });
+    await this.clientRepository.remove(client);
+    return client;
+  }
+
+  async checkClientOwnership({
+    clientId,
+    userId,
+  }: {
+    clientId: string;
+    userId: string;
+  }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+
+    if (!user.clientProfile || user.clientProfile.id !== clientId) {
+      throw new UnauthorizedException('Not your client profile');
+    }
+
+    const client = await this.findOneByOrFail({ id: clientId });
+
+    return client;
   }
 }

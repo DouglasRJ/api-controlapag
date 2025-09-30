@@ -32,7 +32,13 @@ export class ServicesService {
     return service;
   }
 
-  async create(userId: string, createServiceDto: CreateServiceDto) {
+  async create({
+    userId,
+    createServiceDto,
+  }: {
+    userId: string;
+    createServiceDto: CreateServiceDto;
+  }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     if (!user.providerProfile) {
@@ -54,8 +60,8 @@ export class ServicesService {
     return await this.serviceRepository.find();
   }
 
-  async findOne(serviceId: string) {
-    const service = await this.findOneByOrFail({ id: serviceId });
+  async findOne({ id }: { id: string }) {
+    const service = await this.findOneByOrFail({ id });
 
     if (!service) {
       throw new NotFoundException('Service not exists');
@@ -64,12 +70,16 @@ export class ServicesService {
     return service;
   }
 
-  async update(
-    serviceId: string,
-    userId: string,
-    updateServiceDto: UpdateServiceDto,
-  ) {
-    const service = await this.checkServiceOwnership(serviceId, userId);
+  async update({
+    serviceId,
+    userId,
+    updateServiceDto,
+  }: {
+    serviceId: string;
+    userId: string;
+    updateServiceDto: UpdateServiceDto;
+  }) {
+    const service = await this.checkServiceOwnership({ serviceId, userId });
 
     service.name = updateServiceDto.name ?? service.name;
     service.description = updateServiceDto.description ?? service.description;
@@ -80,13 +90,19 @@ export class ServicesService {
     return updated;
   }
 
-  async remove(userId: string, serviceId: string) {
-    const service = await this.checkServiceOwnership(serviceId, userId);
+  async remove({ userId, serviceId }: { userId: string; serviceId: string }) {
+    const service = await this.checkServiceOwnership({ serviceId, userId });
     await this.serviceRepository.remove(service);
     return service;
   }
 
-  async checkServiceOwnership(serviceId: string, userId: string) {
+  async checkServiceOwnership({
+    serviceId,
+    userId,
+  }: {
+    serviceId: string;
+    userId: string;
+  }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     if (!user.providerProfile) {

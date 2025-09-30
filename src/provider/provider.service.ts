@@ -33,7 +33,13 @@ export class ProviderService {
     return provider;
   }
 
-  async create(userId: string, createProviderDto: CreateProviderDto) {
+  async create({
+    userId,
+    createProviderDto,
+  }: {
+    userId: string;
+    createProviderDto: CreateProviderDto;
+  }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     const provider: Provider = new Provider();
@@ -43,6 +49,7 @@ export class ProviderService {
     provider.bio = createProviderDto.bio;
     provider.businessPhone = createProviderDto.businessPhone;
     provider.status = PROVIDER_STATUS.PENDING_VERIFICATION;
+
     provider.user = user;
 
     const created = await this.providerRepository.save(provider);
@@ -53,7 +60,7 @@ export class ProviderService {
     return this.providerRepository.find();
   }
 
-  async findOne(userId: string) {
+  async findOne({ userId }: { userId: string }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     if (!user.providerProfile) {
@@ -67,18 +74,19 @@ export class ProviderService {
     return provider;
   }
 
-  async update(
-    providerId: string,
-    userId: string,
-    updateProviderDto: UpdateProviderDto,
-  ) {
-    const user = await this.userService.findOneByOrFail({ id: userId });
-
-    if (!user.providerProfile || user.providerProfile.id !== providerId) {
-      throw new UnauthorizedException('Not your provider profile');
-    }
-
-    const provider = await this.findOneByOrFail({ id: providerId });
+  async update({
+    providerId,
+    userId,
+    updateProviderDto,
+  }: {
+    providerId: string;
+    userId: string;
+    updateProviderDto: UpdateProviderDto;
+  }) {
+    const provider = await this.checkProviderOwnership({
+      providerId,
+      userId,
+    });
 
     provider.title = updateProviderDto.title ?? provider.title;
     provider.address = updateProviderDto.address ?? provider.address;
@@ -87,10 +95,35 @@ export class ProviderService {
       updateProviderDto.businessPhone ?? provider.businessPhone;
 
     const updated = await this.providerRepository.save(provider);
+
     return updated;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} provider`;
+  async remove({ providerId, userId }: { providerId: string; userId: string }) {
+    const provider = await this.checkProviderOwnership({
+      providerId,
+      userId,
+    });
+    await this.providerRepository.remove(provider);
+
+    return provider;
+  }
+
+  async checkProviderOwnership({
+    providerId,
+    userId,
+  }: {
+    providerId: string;
+    userId: string;
+  }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+
+    if (!user.providerProfile || user.providerProfile.id !== providerId) {
+      throw new UnauthorizedException('Not your provider profile');
+    }
+
+    const provider = await this.findOneByOrFail({ id: providerId });
+
+    return provider;
   }
 }

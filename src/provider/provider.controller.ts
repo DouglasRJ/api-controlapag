@@ -26,7 +26,9 @@ export class ProviderController {
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
   async findOne(@Req() req: AuthenticatedRequest) {
-    const provider = await this.providerService.findOne(req.user.id);
+    const provider = await this.providerService.findOne({
+      userId: req.user.id,
+    });
     return new ProviderResponseDto(provider);
   }
 
@@ -37,16 +39,21 @@ export class ProviderController {
     @Req() req: AuthenticatedRequest,
     @Body() updateProviderDto: UpdateProviderDto,
   ) {
-    const provider = await this.providerService.update(
-      id,
-      req.user.id,
+    const provider = await this.providerService.update({
+      providerId: id,
+      userId: req.user.id,
       updateProviderDto,
-    );
+    });
     return new ProviderResponseDto(provider);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.providerService.remove(+id);
+  async remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    const provider = await this.providerService.remove({
+      providerId: id,
+      userId: req.user.id,
+    });
+    return new ProviderResponseDto(provider);
   }
 }

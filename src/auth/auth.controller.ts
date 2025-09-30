@@ -12,18 +12,22 @@ export class AuthController {
 
   @Post()
   login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    return this.authService.login({ loginDto });
   }
 
   @Post('/register/provider')
   async createProvider(@Body() createProviderDto: CreateProviderDto) {
-    const provider = await this.authService.createProvider(createProviderDto);
+    const provider = await this.authService.createProvider({
+      createUserDto: createProviderDto,
+    });
     return new ProviderResponseDto(provider);
   }
 
   @Post('/register/client')
   async createClient(@Body() createClientDto: CreateClientDto) {
-    const client = await this.authService.createClient(createClientDto);
+    const client = await this.authService.createClient({
+      createUserDto: createClientDto,
+    });
     return new ClientResponseDto(client);
   }
 }

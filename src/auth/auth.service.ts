@@ -9,18 +9,13 @@ import { Client } from 'src/client/entities/client.entity';
 import { HashService } from 'src/common/hash/hash.service';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { Provider } from 'src/provider/entities/provider.entity';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { User } from 'src/user/entities/user.entity';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
 import { DataSource, EntityManager } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './types/jwt-payload.type';
-
-type UserData = {
-  username: string;
-  email: string;
-  password: string;
-};
 
 @Injectable()
 export class AuthService {
@@ -31,7 +26,7 @@ export class AuthService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login({ loginDto }: { loginDto: LoginDto }) {
     const error = new UnauthorizedException('Email or Password incorrect');
 
     const user = await this.userService.findOneByOrFail({
@@ -59,11 +54,15 @@ export class AuthService {
     };
   }
 
-  private async _createUser(
-    userData: UserData,
-    role: USER_ROLE,
-    transactionalEntityManager: EntityManager,
-  ): Promise<User> {
+  private async _createUser({
+    userData,
+    role,
+    transactionalEntityManager,
+  }: {
+    userData: CreateUserDto;
+    role: USER_ROLE;
+    transactionalEntityManager: EntityManager;
+  }): Promise<User> {
     const hashedPassword = await this.hashService.hash(userData.password);
     const newUser = transactionalEntityManager.create(User, {
       username: userData.username,
@@ -75,14 +74,18 @@ export class AuthService {
     return transactionalEntityManager.save(newUser);
   }
 
-  async createProvider(createUserDto: CreateProviderDto) {
+  async createProvider({
+    createUserDto,
+  }: {
+    createUserDto: CreateProviderDto;
+  }) {
     return this.dataSource.transaction(async transactionalEntityManager => {
       try {
-        const newUser = await this._createUser(
-          createUserDto,
-          USER_ROLE.PROVIDER,
+        const newUser = await this._createUser({
+          userData: createUserDto,
+          role: USER_ROLE.PROVIDER,
           transactionalEntityManager,
-        );
+        });
 
         const newProviderProfile = transactionalEntityManager.create(Provider, {
           title: createUserDto.title,
@@ -100,14 +103,14 @@ export class AuthService {
     });
   }
 
-  async createClient(createUserDto: CreateClientDto) {
+  async createClient({ createUserDto }: { createUserDto: CreateClientDto }) {
     return this.dataSource.transaction(async transactionalEntityManager => {
       try {
-        const newUser = await this._createUser(
-          createUserDto,
-          USER_ROLE.CLIENT,
+        const newUser = await this._createUser({
+          userData: createUserDto,
+          role: USER_ROLE.CLIENT,
           transactionalEntityManager,
-        );
+        });
 
         const newClientProfile = transactionalEntityManager.create(Client, {
           phone: createUserDto.phone,
@@ -123,7 +126,7 @@ export class AuthService {
     });
   }
 
-  async removeUser(userId: string) {
+  async removeUser({ userId }: { userId: string }) {
     await this.userService.remove(userId);
   }
 }

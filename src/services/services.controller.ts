@@ -28,7 +28,7 @@ export class ServicesController {
   @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const service = await this.servicesService.findOne(id);
+    const service = await this.servicesService.findOne({ id });
     return new ServiceResponseDto(service);
   }
 
@@ -38,10 +38,10 @@ export class ServicesController {
     @Req() req: AuthenticatedRequest,
     @Body() createServiceDto: CreateServiceDto,
   ) {
-    const service = await this.servicesService.create(
-      req.user.id,
+    const service = await this.servicesService.create({
+      userId: req.user.id,
       createServiceDto,
-    );
+    });
     return new ServiceResponseDto(service);
   }
 
@@ -52,18 +52,21 @@ export class ServicesController {
     @Req() req: AuthenticatedRequest,
     @Body() updateServiceDto: UpdateServiceDto,
   ) {
-    const service = await this.servicesService.update(
-      id,
-      req.user.id,
+    const service = await this.servicesService.update({
+      serviceId: id,
+      userId: req.user.id,
       updateServiceDto,
-    );
+    });
     return new ServiceResponseDto(service);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   async remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    const service = await this.servicesService.remove(req.user.id, id);
+    const service = await this.servicesService.remove({
+      userId: req.user.id,
+      serviceId: id,
+    });
     return new ServiceResponseDto(service);
   }
 }
