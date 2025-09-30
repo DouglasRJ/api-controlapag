@@ -22,3 +22,8 @@ variable "ecs_cpu" {
 variable "ecs_memory" {
   type        = string
 }
+
+variable "create_costly_network_resources" {
+  type        = bool
+  default     = true 
+}

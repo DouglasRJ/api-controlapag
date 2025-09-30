@@ -1,10 +1,12 @@
 import { PROVIDER_STATUS } from 'src/provider/enum/provider-status.enum';
+import { Service } from 'src/services/entities/service.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -40,7 +42,12 @@ export class Provider {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToOne(() => User, user => user.providerProfile, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, user => user.providerProfile, { cascade: true })
   @JoinColumn()
   user: User;
+
+  @OneToMany(() => Service, service => service.provider, {
+    cascade: true,
+  })
+  services: Service[];
 }

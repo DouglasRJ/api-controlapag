@@ -26,6 +26,7 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb" "main" {
+  count              = var.create_costly_network_resources ? 1 : 0 
   name               = "${var.project_name}-lb"
   internal           = false
   load_balancer_type = "application"
@@ -34,6 +35,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "api" {
+  count       = var.create_costly_network_resources ? 1 : 0 
   name        = "${var.project_name}-api-tg"
   port        = 3000
   protocol    = "HTTP"
@@ -46,13 +48,14 @@ resource "aws_lb_target_group" "api" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.main.arn
+    count             = var.create_costly_network_resources ? 1 : 0 
+  load_balancer_arn = aws_lb.main[0].arn # <--- CORRIGIDO
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
+    target_group_arn = aws_lb_target_group.api[0].arn # <--- ADICIONE O [0] AQUI
   }
 }
 
@@ -122,18 +125,20 @@ resource "aws_ecs_service" "main" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
+  dynamic "load_balancer" {
+    for_each = var.create_costly_network_resources ? [1] : []
+    content {
+      target_group_arn = aws_lb_target_group.api[0].arn
+      container_name   = "api-container"
+      container_port   = 3000
+    }
+  }
+
   network_configuration {
     subnets         = module.vpc.private_subnets
     security_groups = [aws_security_group.ecs_service_sg.id]
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.api.arn
-    container_name   = "api-container"
-    container_port   = 3000
-  }
-
-  depends_on = [aws_lb_listener.http]
 }
 
 resource "aws_cloudwatch_log_group" "api" {

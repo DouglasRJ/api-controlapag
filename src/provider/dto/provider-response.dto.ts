@@ -1,3 +1,4 @@
+import { ServiceResponseDto } from 'src/services/dto/service-response.dto';
 import { Provider } from '../entities/provider.entity';
 import { PROVIDER_STATUS } from '../enum/provider-status.enum';
 
@@ -11,6 +12,8 @@ export class ProviderResponseDto {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
+  readonly services?: ServiceResponseDto[];
+
   constructor(provider: Provider) {
     this.id = provider.id;
     this.title = provider.title;
@@ -20,5 +23,9 @@ export class ProviderResponseDto {
     this.address = provider.address;
     this.createdAt = provider.createdAt;
     this.updatedAt = provider.updatedAt;
+
+    if (provider.services.length) {
+      this.services = provider.services?.map(s => new ServiceResponseDto(s));
+    }
   }
 }
