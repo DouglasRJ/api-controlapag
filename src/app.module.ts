@@ -11,6 +11,7 @@ import { ProviderModule } from './provider/provider.module';
 import { UserModule } from './user/user.module';
 import { ServicesModule } from './services/services.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
     ClientModule,
     ServicesModule,
     EnrollmentsModule,
+    ChargeScheduleModule,
   ],
   controllers: [AppController],
   providers: [

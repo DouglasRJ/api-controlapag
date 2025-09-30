@@ -1,3 +1,4 @@
+import { ChargeSchedule } from 'src/charge-schedule/entities/charge-schedule.entity';
 import { Client } from 'src/client/entities/client.entity';
 import { Service } from 'src/services/entities/service.entity';
 import {
@@ -6,6 +7,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -48,4 +50,7 @@ export class Enrollments {
   @ManyToOne(() => Client, client => client.enrollments)
   @JoinColumn({ name: 'clientId' })
   client: Client;
+
+  @OneToOne(() => ChargeSchedule, chargeSchedule => chargeSchedule.enrollment)
+  chargeSchedule: ChargeSchedule;
 }

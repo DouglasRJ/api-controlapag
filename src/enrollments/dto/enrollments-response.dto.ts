@@ -1,3 +1,4 @@
+import { ChargeScheduleResponseDto } from 'src/charge-schedule/dto/charge-schedule-response.dto';
 import { Enrollments } from '../entities/enrollment.entity';
 import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
 
@@ -10,6 +11,8 @@ export class EnrollmentsResponseDto {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
+  readonly chargeSchedule?: ChargeScheduleResponseDto;
+
   constructor(enrollment: Enrollments) {
     this.id = enrollment.id;
     this.price = enrollment.price;
@@ -18,5 +21,11 @@ export class EnrollmentsResponseDto {
     this.status = enrollment.status;
     this.createdAt = enrollment.createdAt;
     this.updatedAt = enrollment.updatedAt;
+
+    if (enrollment.chargeSchedule) {
+      this.chargeSchedule = new ChargeScheduleResponseDto(
+        enrollment.chargeSchedule,
+      );
+    }
   }
 }

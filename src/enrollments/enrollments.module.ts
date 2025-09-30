@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ChargeScheduleModule } from 'src/charge-schedule/charge-schedule.module';
 import { ClientModule } from 'src/client/client.module';
 import { ServicesModule } from 'src/services/services.module';
 import { UserModule } from 'src/user/user.module';
@@ -13,6 +14,7 @@ import { Enrollments } from './entities/enrollment.entity';
     UserModule,
     ServicesModule,
     ClientModule,
+    ChargeScheduleModule,
   ],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],

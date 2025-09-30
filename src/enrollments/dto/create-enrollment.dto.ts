@@ -1,4 +1,12 @@
-import { IsDate, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { CreateChargeScheduleDto } from 'src/charge-schedule/dto/create-charge-schedule.dto';
 
 export class CreateEnrollmentDto {
   @IsNumber()
@@ -19,4 +27,9 @@ export class CreateEnrollmentDto {
   @IsString()
   @IsNotEmpty()
   clientId: string;
+
+  @ValidateNested()
+  @Type(() => CreateChargeScheduleDto)
+  @IsNotEmpty()
+  chargeSchedule: CreateChargeScheduleDto;
 }

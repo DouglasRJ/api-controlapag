@@ -1,0 +1,4 @@
+export enum BILLING_MODEL {
+  RECURRING = 'RECURRING',
+  ONE_TIME = 'ONE_TIME',
+}

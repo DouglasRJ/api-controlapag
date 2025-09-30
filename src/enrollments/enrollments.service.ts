@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ChargeScheduleService } from 'src/charge-schedule/charge-schedule.service';
 import { ClientService } from 'src/client/client.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
@@ -21,12 +22,13 @@ export class EnrollmentsService {
     private readonly userService: UserService,
     private readonly servicesService: ServicesService,
     private readonly clientService: ClientService,
+    private readonly chargeScheduleService: ChargeScheduleService,
   ) {}
 
   async findOneByOrFail(enrollmentsData: Partial<Enrollments>) {
     const enrollments = await this.enrollmentsRepository.findOne({
       where: enrollmentsData,
-      relations: ['service', 'service.provider'],
+      relations: ['service', 'service.provider', 'chargeSchedule'],
     });
 
     if (!enrollments) {
@@ -56,17 +58,26 @@ export class EnrollmentsService {
       throw new BadRequestException('Client not exists');
     }
 
-    const enrollments: Enrollments = new Enrollments();
+    let enrollment: Enrollments = new Enrollments();
 
-    enrollments.service = service;
-    enrollments.client = client;
+    enrollment.service = service;
+    enrollment.client = client;
 
-    enrollments.price = createEnrollmentDto.price;
-    enrollments.startDate = createEnrollmentDto.startDate;
-    enrollments.endDate = createEnrollmentDto.endDate;
+    enrollment = await this.enrollmentsRepository.save({
+      ...enrollment,
+      ...createEnrollmentDto,
+    });
 
-    const created = await this.enrollmentsRepository.save(enrollments);
-    return created;
+    const chargeSchedule = await this.chargeScheduleService.create({
+      createChargeScheduleDto: createEnrollmentDto.chargeSchedule,
+      enrollmentId: enrollment.id,
+    });
+
+    enrollment.chargeSchedule = chargeSchedule;
+
+    enrollment = await this.enrollmentsRepository.save(enrollment);
+
+    return enrollment;
   }
 
   async findAll() {
@@ -75,10 +86,6 @@ export class EnrollmentsService {
 
   async findOne({ id }: { id: string }) {
     const enrollments = await this.findOneByOrFail({ id });
-
-    if (!enrollments) {
-      throw new NotFoundException('Enrollments not exists');
-    }
 
     return enrollments;
   }
