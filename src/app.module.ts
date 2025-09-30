@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { ServicesModule } from './services/services.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
+import { ChargeExceptionModule } from './charge-exception/charge-exception.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
     ServicesModule,
     EnrollmentsModule,
     ChargeScheduleModule,
+    ChargeExceptionModule,
   ],
   controllers: [AppController],
   providers: [

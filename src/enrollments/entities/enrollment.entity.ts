@@ -1,3 +1,4 @@
+import { ChargeException } from 'src/charge-exception/entities/charge-exception.entity';
 import { ChargeSchedule } from 'src/charge-schedule/entities/charge-schedule.entity';
 import { Client } from 'src/client/entities/client.entity';
 import { Service } from 'src/services/entities/service.entity';
@@ -7,6 +8,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -53,4 +55,10 @@ export class Enrollments {
 
   @OneToOne(() => ChargeSchedule, chargeSchedule => chargeSchedule.enrollment)
   chargeSchedule: ChargeSchedule;
+
+  @OneToMany(
+    () => ChargeException,
+    ChargeException => ChargeException.enrollment,
+  )
+  chargeExceptions: ChargeException[];
 }
