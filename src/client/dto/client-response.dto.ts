@@ -1,3 +1,4 @@
+import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
 import { Client } from '../entities/client.entity';
 
 export class ClientResponseDto {
@@ -7,11 +8,19 @@ export class ClientResponseDto {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
+  readonly enrollments?: EnrollmentsResponseDto[];
+
   constructor(client: Client) {
     this.id = client.id;
     this.phone = client.phone;
     this.address = client.address;
     this.createdAt = client.createdAt;
     this.updatedAt = client.updatedAt;
+
+    if (client.enrollments) {
+      this.enrollments = client.enrollments.map(
+        enrollment => new EnrollmentsResponseDto(enrollment),
+      );
+    }
   }
 }

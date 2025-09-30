@@ -19,10 +19,10 @@ export class ClientService {
     private readonly userService: UserService,
   ) {}
 
-  async findOneByOrFail(clientData: Partial<Client>) {
+  async findOneByOrFail(clientData: Partial<Client>, getEnrollments = false) {
     const user = await this.clientRepository.findOne({
       where: clientData,
-      relations: ['user'],
+      relations: ['user', ...(getEnrollments ? ['enrollments'] : [])],
     });
 
     if (!user) {
@@ -62,7 +62,14 @@ export class ClientService {
       throw new BadRequestException('User not have Client Profile');
     }
 
-    return user.clientProfile;
+    const client = await this.findOneByOrFail(
+      { id: user.clientProfile.id },
+      true,
+    );
+
+    console.log('client', client);
+
+    return client;
   }
 
   async update({

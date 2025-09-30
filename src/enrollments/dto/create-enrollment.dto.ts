@@ -15,4 +15,8 @@ export class CreateEnrollmentDto {
   @IsString()
   @IsNotEmpty()
   serviceId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  clientId: string;
 }

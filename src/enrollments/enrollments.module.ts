@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ClientModule } from 'src/client/client.module';
 import { ServicesModule } from 'src/services/services.module';
 import { UserModule } from 'src/user/user.module';
 import { EnrollmentsController } from './enrollments.controller';
@@ -11,6 +12,7 @@ import { Enrollments } from './entities/enrollment.entity';
     TypeOrmModule.forFeature([Enrollments]),
     UserModule,
     ServicesModule,
+    ClientModule,
   ],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],

@@ -1,9 +1,11 @@
+import { Enrollments } from 'src/enrollments/entities/enrollment.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -29,4 +31,9 @@ export class Client {
   @OneToOne(() => User, user => user.clientProfile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
+
+  @OneToMany(() => Enrollments, enrollments => enrollments.client, {
+    cascade: true,
+  })
+  enrollments: Enrollments[];
 }

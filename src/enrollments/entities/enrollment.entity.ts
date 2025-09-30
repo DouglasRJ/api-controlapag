@@ -1,3 +1,4 @@
+import { Client } from 'src/client/entities/client.entity';
 import { Service } from 'src/services/entities/service.entity';
 import {
   Column,
@@ -43,4 +44,8 @@ export class Enrollments {
   @ManyToOne(() => Service, service => service.enrollments)
   @JoinColumn({ name: 'serviceId' })
   service: Service;
+
+  @ManyToOne(() => Client, client => client.enrollments)
+  @JoinColumn({ name: 'clientId' })
+  client: Client;
 }

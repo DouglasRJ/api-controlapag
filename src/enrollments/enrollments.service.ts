@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ClientService } from 'src/client/client.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
@@ -19,6 +20,7 @@ export class EnrollmentsService {
     private readonly enrollmentsRepository: Repository<Enrollments>,
     private readonly userService: UserService,
     private readonly servicesService: ServicesService,
+    private readonly clientService: ClientService,
   ) {}
 
   async findOneByOrFail(enrollmentsData: Partial<Enrollments>) {
@@ -46,9 +48,18 @@ export class EnrollmentsService {
       userId,
     });
 
+    const client = await this.clientService.findOneByOrFail({
+      id: createEnrollmentDto.clientId,
+    });
+
+    if (!client) {
+      throw new BadRequestException('Client not exists');
+    }
+
     const enrollments: Enrollments = new Enrollments();
 
     enrollments.service = service;
+    enrollments.client = client;
 
     enrollments.price = createEnrollmentDto.price;
     enrollments.startDate = createEnrollmentDto.startDate;
