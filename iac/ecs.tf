@@ -7,8 +7,8 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_security_group" "lb_sg" {
-  name        = "${var.project_name}-lb-sg"
-  vpc_id      = module.vpc.vpc_id
+  name   = "${var.project_name}-lb-sg"
+  vpc_id = module.vpc.vpc_id
 
   ingress {
     from_port   = 80
@@ -26,7 +26,6 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb" "main" {
-  count              = var.create_costly_network_resources ? 1 : 0 
   name               = "${var.project_name}-lb"
   internal           = false
   load_balancer_type = "application"
@@ -35,7 +34,6 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "api" {
-  count       = var.create_costly_network_resources ? 1 : 0 
   name        = "${var.project_name}-api-tg"
   port        = 3000
   protocol    = "HTTP"
@@ -43,19 +41,18 @@ resource "aws_lb_target_group" "api" {
   target_type = "ip"
 
   health_check {
-    path = "/" 
+    path = "/"
   }
 }
 
 resource "aws_lb_listener" "http" {
-    count             = var.create_costly_network_resources ? 1 : 0 
-  load_balancer_arn = aws_lb.main[0].arn # <--- CORRIGIDO
+  load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.api[0].arn # <--- ADICIONE O [0] AQUI
+    target_group_arn = aws_lb_target_group.api.arn
   }
 }
 
@@ -78,18 +75,17 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
 
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.project_name}-api-task"
-  cpu                      = "256"  # 0.25 vCPU
-  memory                   = "512"  # 512 MB
+  cpu                      = var.ecs_cpu
+  memory                   = var.ecs_memory
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  # task_role_arn          = # Adicione um Task Role aqui para permissões da aplicação (ex: acesso ao S3)
 
   container_definitions = jsonencode([{
     name      = "api-container"
     image     = aws_ecr_repository.api.repository_url
-    cpu       = 256
-    memory    = 512
+    cpu       = tonumber(var.ecs_cpu)
+    memory    = tonumber(var.ecs_memory)
     essential = true
     portMappings = [{
       containerPort = 3000
@@ -107,7 +103,7 @@ resource "aws_ecs_task_definition" "api" {
       { name = "DB_USERNAME", value = aws_db_instance.default.username },
       { name = "DB_DATABASE", value = var.project_name },
     ]
-    logConfiguration = { 
+    logConfiguration = {
       logDriver = "awslogs"
       options = {
         "awslogs-group"         = "/ecs/${var.project_name}-api"
@@ -125,20 +121,16 @@ resource "aws_ecs_service" "main" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-  dynamic "load_balancer" {
-    for_each = var.create_costly_network_resources ? [1] : []
-    content {
-      target_group_arn = aws_lb_target_group.api[0].arn
-      container_name   = "api-container"
-      container_port   = 3000
-    }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.api.arn
+    container_name   = "api-container"
+    container_port   = 3000
   }
 
   network_configuration {
     subnets         = module.vpc.private_subnets
     security_groups = [aws_security_group.ecs_service_sg.id]
   }
-
 }
 
 resource "aws_cloudwatch_log_group" "api" {

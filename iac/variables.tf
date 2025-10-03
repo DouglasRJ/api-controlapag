@@ -23,7 +23,7 @@ variable "ecs_memory" {
   type        = string
 }
 
-variable "create_costly_network_resources" {
-  type        = bool
-  default     = true 
+variable "internal_api_token" {
+  type      = string
+  sensitive = true
 }
