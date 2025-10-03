@@ -1,5 +1,6 @@
 import { ChargeException } from 'src/charge-exception/entities/charge-exception.entity';
 import { ChargeSchedule } from 'src/charge-schedule/entities/charge-schedule.entity';
+import { Charge } from 'src/charge/entities/charge.entity';
 import { Client } from 'src/client/entities/client.entity';
 import { Service } from 'src/services/entities/service.entity';
 import {
@@ -61,4 +62,7 @@ export class Enrollments {
     ChargeException => ChargeException.enrollment,
   )
   chargeExceptions: ChargeException[];
+
+  @OneToMany(() => Charge, charge => charge.enrollment)
+  charges: Charge[];
 }

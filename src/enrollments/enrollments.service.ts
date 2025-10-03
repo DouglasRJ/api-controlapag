@@ -28,7 +28,12 @@ export class EnrollmentsService {
   async findOneByOrFail(enrollmentsData: Partial<Enrollments>) {
     const enrollments = await this.enrollmentsRepository.findOne({
       where: enrollmentsData,
-      relations: ['service', 'service.provider', 'chargeSchedule'],
+      relations: [
+        'service',
+        'service.provider',
+        'chargeSchedule',
+        'chargeExceptions',
+      ],
     });
 
     if (!enrollments) {

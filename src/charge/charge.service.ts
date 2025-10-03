@@ -1,0 +1,79 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
+import { Repository } from 'typeorm';
+import { CreateChargeDto } from './dto/create-charge.dto';
+import { UpdateChargeDto } from './dto/update-charge.dto';
+import { Charge } from './entities/charge.entity';
+
+@Injectable()
+export class ChargeService {
+  constructor(
+    @InjectRepository(Charge)
+    private readonly chargeRepository: Repository<Charge>,
+    private readonly enrollmentsService: EnrollmentsService,
+  ) {}
+
+  async findOneByOrFail(chargeData: Partial<Charge>) {
+    const charge = await this.chargeRepository.findOne({
+      where: chargeData,
+    });
+
+    if (!charge) {
+      throw new NotFoundException('Charge not found');
+    }
+
+    return charge;
+  }
+
+  async create({
+    createChargeDto,
+    enrollmentId,
+  }: {
+    createChargeDto: CreateChargeDto;
+    enrollmentId: string;
+  }) {
+    const enrollment = await this.enrollmentsService.findOneByOrFail({
+      id: enrollmentId,
+    });
+
+    const charge = await this.chargeRepository.save({
+      ...createChargeDto,
+      enrollment,
+    });
+    return charge;
+  }
+
+  async findAll() {
+    return await this.chargeRepository.find();
+  }
+
+  async findOne({ id }: { id: string }) {
+    const charge = await this.findOneByOrFail({ id });
+    return charge;
+  }
+
+  async update({
+    chargeId,
+    updateChargeDto,
+  }: {
+    chargeId: string;
+    updateChargeDto: UpdateChargeDto;
+  }) {
+    const charge = await this.chargeRepository.findOneByOrFail({
+      id: chargeId,
+    });
+
+    this.chargeRepository.merge(charge, updateChargeDto);
+
+    return this.chargeRepository.save(charge);
+  }
+
+  async remove({ chargeId }: { chargeId: string }) {
+    const charge = await this.findOneByOrFail({
+      id: chargeId,
+    });
+    await this.chargeRepository.remove(charge);
+    return charge;
+  }
+}

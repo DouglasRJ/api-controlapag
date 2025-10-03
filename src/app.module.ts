@@ -13,6 +13,7 @@ import { ServicesModule } from './services/services.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 import { ChargeExceptionModule } from './charge-exception/charge-exception.module';
+import { ChargeModule } from './charge/charge.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ChargeExceptionModule } from './charge-exception/charge-exception.modul
     EnrollmentsModule,
     ChargeScheduleModule,
     ChargeExceptionModule,
+    ChargeModule,
   ],
   controllers: [AppController],
   providers: [

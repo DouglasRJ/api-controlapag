@@ -1,0 +1,6 @@
+export enum CHARGE_STATUS {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  CANCELED = 'CANCELED',
+}

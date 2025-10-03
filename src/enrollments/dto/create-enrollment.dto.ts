@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  IsDate,
+  IsDateString,
   IsNotEmpty,
   IsNumber,
   IsString,
@@ -13,11 +13,11 @@ export class CreateEnrollmentDto {
   @IsNotEmpty()
   price: number;
 
-  @IsDate()
+  @IsDateString()
   @IsNotEmpty()
   startDate: Date;
 
-  @IsDate()
+  @IsDateString()
   endDate?: Date;
 
   @IsString()

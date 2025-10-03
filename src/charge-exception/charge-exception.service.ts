@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
 import { Repository } from 'typeorm';
 import { CreateChargeExceptionDto } from './dto/create-charge-exception.dto';
 import { UpdateChargeExceptionDto } from './dto/update-charge-exception.dto';
@@ -10,6 +11,7 @@ export class ChargeExceptionService {
   constructor(
     @InjectRepository(ChargeException)
     private readonly chargeExceptionRepository: Repository<ChargeException>,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async findOneByOrFail(chargeExceptionData: Partial<ChargeException>) {
@@ -31,9 +33,13 @@ export class ChargeExceptionService {
     createChargeExceptionDto: CreateChargeExceptionDto;
     enrollmentId: string;
   }) {
+    const enrollment = await this.enrollmentsService.findOneByOrFail({
+      id: enrollmentId,
+    });
+
     const chargeException = await this.chargeExceptionRepository.save({
       ...createChargeExceptionDto,
-      enrollment: { id: enrollmentId },
+      enrollment,
     });
     return chargeException;
   }

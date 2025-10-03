@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
 import { BILLING_MODEL } from '../enum/billing-model.enum';
 import { RECURRENCE_INTERVAL } from '../enum/recurrence-interval.enum';
 
@@ -14,6 +14,6 @@ export class CreateChargeScheduleDto {
   @IsNotEmpty()
   chargeDay: number;
 
-  @IsDate()
+  @IsDateString()
   dueDate?: Date;
 }
