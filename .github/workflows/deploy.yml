@@ -17,6 +17,17 @@ jobs:
     name: Terraform ${{ github.event.inputs.action }}
     runs-on: ubuntu-latest
 
+    env:
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_project_name: 'devcontrolapag-api'
+      TF_VAR_db_instance_class: 'db.t3.micro'
+      TF_VAR_ecs_cpu: '256'
+      TF_VAR_ecs_memory: '512'
+      TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+      TF_VAR_internal_api_token: ${{ secrets.TF_VAR_INTERNAL_API_TOKEN }}
+      TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+      TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,12 +52,12 @@ jobs:
 
       - name: Terraform Plan
         if: github.event.inputs.action == 'plan'
-        run: terraform plan -var-file="dev.tfvars"
+        run: terraform plan
         working-directory: ./iac
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
-        run: terraform apply -auto-approve -var-file="dev.tfvars"
+        run: terraform apply -auto-approve
         working-directory: ./iac
 
   deploy-application:
