@@ -26,7 +26,7 @@ resource "aws_db_instance" "default" {
   password             = aws_secretsmanager_secret_version.db_password_version.secret_string
   db_subnet_group_name = aws_db_subnet_group.default.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  skip_final_snapshot  = false 
+  skip_final_snapshot  = true 
 }
 
 resource "aws_secretsmanager_secret" "jwt_secret" {
