@@ -3,15 +3,10 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsUUID,
   Min,
 } from 'class-validator';
 
 export class CreateChargeDto {
-  @IsUUID()
-  @IsNotEmpty()
-  enrollmentId: string;
-
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   @IsNotEmpty()

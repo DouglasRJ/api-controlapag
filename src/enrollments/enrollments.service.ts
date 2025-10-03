@@ -9,10 +9,11 @@ import { ChargeScheduleService } from 'src/charge-schedule/charge-schedule.servi
 import { ClientService } from 'src/client/client.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { Enrollments } from './entities/enrollment.entity';
+import { ENROLLMENT_STATUS } from './enum/enrollment-status.enum';
 
 @Injectable()
 export class EnrollmentsService {
@@ -87,6 +88,19 @@ export class EnrollmentsService {
 
   async findAll() {
     return await this.enrollmentsRepository.find();
+  }
+
+  async findAllNeedsCharge() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return await this.enrollmentsRepository.find({
+      where: {
+        status: ENROLLMENT_STATUS.ACTIVE,
+        startDate: MoreThanOrEqual(today),
+      },
+      relations: ['chargeSchedule', 'chargeExceptions', 'charges'],
+    });
   }
 
   async findOne({ id }: { id: string }) {

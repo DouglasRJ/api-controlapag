@@ -14,6 +14,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 import { ChargeExceptionModule } from './charge-exception/charge-exception.module';
 import { ChargeModule } from './charge/charge.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ChargeModule } from './charge/charge.module';
     ChargeScheduleModule,
     ChargeExceptionModule,
     ChargeModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [
