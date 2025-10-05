@@ -34,6 +34,30 @@ resource "aws_ecs_task_definition" "api" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+
+ # iac/ecs.tf (adicionar no final do arquivo)
+
+resource "aws_iam_role_policy" "ecs_execution_secrets_policy" {
+  name = "${var.project_name}-ecs-secrets-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = [
+          aws_secretsmanager_secret.db_password.arn,
+          aws_secretsmanager_secret.jwt_secret.arn,
+          aws_secretsmanager_secret.internal_api_token.arn
+        ]
+      }
+    ]
+  })
+}
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
@@ -98,4 +122,26 @@ resource "aws_ecs_service" "main" {
 
 resource "aws_cloudwatch_log_group" "api" {
   name = "/ecs/${var.project_name}-api"
+}
+
+resource "aws_iam_role_policy" "ecs_execution_secrets_policy" {
+  name = "${var.project_name}-ecs-secrets-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = [
+          aws_secretsmanager_secret.db_password.arn,
+          aws_secretsmanager_secret.jwt_secret.arn,
+          aws_secretsmanager_secret.internal_api_token.arn
+        ]
+      }
+    ]
+  })
 }
