@@ -1,61 +1,11 @@
 resource "aws_ecr_repository" "api" {
-  name = "${var.project_name}/api"
-   force_delete         = true
-  image_tag_mutability = "MUTABLE" 
+  name                 = "${var.project_name}/api"
+  force_delete         = true
+  image_tag_mutability = "MUTABLE"
 }
 
 resource "aws_ecs_cluster" "main" {
   name = "${var.project_name}-cluster"
-}
-
-resource "aws_security_group" "lb_sg" {
-  name   = "${var.project_name}-lb-sg"
-  vpc_id = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_lb" "main" {
-  name               = "${var.project_name}-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = module.vpc.public_subnets
-}
-
-resource "aws_lb_target_group" "api" {
-  name        = "${var.project_name}-api-tg"
-  port        = 3000
-  protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
-  target_type = "ip"
-
-  health_check {
-    path = "/"
-  }
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -83,6 +33,12 @@ resource "aws_ecs_task_definition" "api" {
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
+ task_role_arn            = aws_iam_role.ecs_task_execution_role.id
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
   container_definitions = jsonencode([{
     name      = "api-container"
     image     = aws_ecr_repository.api.repository_url
@@ -90,22 +46,13 @@ resource "aws_ecs_task_definition" "api" {
     memory    = tonumber(var.ecs_memory)
     essential = true
     portMappings = [{
-      containerPort = 3000 
+      containerPort = 3000
       hostPort      = 3000
     }]
     secrets = [
-      {
-        name      = "DB_PASSWORD"
-        valueFrom = aws_secretsmanager_secret.db_password.arn
-      },
-      {
-        name      = "JWT_SECRET"
-        valueFrom = aws_secretsmanager_secret.jwt_secret.arn
-      },
-      {
-        name      = "INTERNAL_API_TOKEN"
-        valueFrom = aws_secretsmanager_secret.internal_api_token.arn
-      }
+      { name = "DB_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn },
+      { name = "JWT_SECRET", valueFrom = aws_secretsmanager_secret.jwt_secret.arn },
+      { name = "INTERNAL_API_TOKEN", valueFrom = aws_secretsmanager_secret.internal_api_token.arn }
     ]
     environment = [
       { name = "DB_HOST", value = aws_db_instance.default.address },
@@ -114,13 +61,15 @@ resource "aws_ecs_task_definition" "api" {
       { name = "DB_DATABASE", value = var.project_name },
       { name = "DB_TYPE", value = "postgres" },
       { name = "DB_AUTO_LOAD_ENTITIES", value = "1" },
-      { name = "DB_SYNCHRONIZE", value = "false" }, # Geralmente false em produção
+      { name = "DB_SYNCHRONIZE", value = "false" },
       { name = "PORT", value = "3000" },
       { name = "NODE_ENV", value = "production" },
       { name = "JWT_EXPIRATION", value = var.jwt_expiration },
       { name = "S3_BUCKET", value = var.s3_bucket },
       { name = "S3_REGION", value = var.aws_region },
-      { name = "DISABLE_MANAGE_FILE", value = var.disable_manage_file }
+      { name = "DISABLE_MANAGE_FILE", value = var.disable_manage_file },
+      { name = "PROJECT_NAME", value = var.project_name },
+      { name = "AWS_REGION", value = var.aws_region }
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -140,15 +89,10 @@ resource "aws_ecs_service" "main" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.api.arn
-    container_name   = "api-container"
-    container_port   = 3000
-  }
-
   network_configuration {
-    subnets         = module.vpc.private_subnets
+    subnets         = module.vpc.public_subnets
     security_groups = [aws_security_group.ecs_service_sg.id]
+    assign_public_ip = true
   }
 }
 

@@ -66,11 +66,13 @@ resource "aws_lambda_function" "charge_creation_lambda" {
       DB_PORT            = tostring(aws_db_instance.default.port)
       DB_DATABASE        = var.project_name
       API_URL            = "http://${aws_lb.main.dns_name}" 
-      INTERNAL_API_TOKEN = var.internal_api_token
+      INTERNAL_API_TOKEN = var.internal_api_token,
+      INTERNAL_API_TOKEN = var.internal_api_token,
+      API_IP_PARAMETER_NAME = aws_ssm_parameter.api_public_ip.name
     }
   }
 }
-# Security Group para a Lambda
+
 resource "aws_security_group" "lambda_sg" {
   name        = "${var.project_name}-lambda-sg"
   description = "Security group for charge creation Lambda"
