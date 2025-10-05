@@ -21,15 +21,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Version   = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
-          "secretsmanager:GetSecretValue"
-        ],
-        Resource = [aws_secretsmanager_secret.db_password.arn]
-      },
-      {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ec2:CreateNetworkInterface",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DeleteNetworkInterface"
@@ -42,32 +35,27 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda/charge-creation" 
-  output_path = "${path.module}/lambda/charge-creation.zip"
+  source_dir  = "${path.module}/../lambda/charge-creation"
+  output_path = "${path.module}/../lambda/charge-creation.zip"
 }
 
 resource "aws_lambda_function" "charge_creation_lambda" {
-  filename      = data.archive_file.lambda_zip.output_path
-  function_name = "${var.project_name}-charge-creation"
-  role          = aws_iam_role.lambda_charge_creation_role.arn
-  handler       = "index.handler" 
+  filename         = data.archive_file.lambda_zip.output_path
+  function_name    = "${var.project_name}-charge-creation"
+  role             = aws_iam_role.lambda_charge_creation_role.arn
+  handler          = "index.handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  runtime       = "nodejs18.x"
-  timeout       = 30
+  runtime          = "nodejs18.x"
+  timeout          = 30
 
   vpc_config {
-    subnet_ids         = module.vpc.private_subnets
+    subnet_ids         = module.vpc.public_subnets 
     security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
   environment {
     variables = {
-      DB_HOST            = aws_db_instance.default.address
-      DB_PORT            = tostring(aws_db_instance.default.port)
-      DB_DATABASE        = var.project_name
-      API_URL            = "http://${aws_lb.main.dns_name}" 
-      INTERNAL_API_TOKEN = var.internal_api_token,
-      INTERNAL_API_TOKEN = var.internal_api_token,
+      INTERNAL_API_TOKEN    = var.internal_api_token
       API_IP_PARAMETER_NAME = aws_ssm_parameter.api_public_ip.name
     }
   }
@@ -94,7 +82,6 @@ resource "aws_security_group_rule" "lambda_to_rds" {
   source_security_group_id = aws_security_group.lambda_sg.id
   security_group_id        = aws_security_group.rds_sg.id
 }
-
 
 resource "aws_cloudwatch_event_rule" "daily_charge_creation_rule" {
   name                = "${var.project_name}-daily-charge-creation"
