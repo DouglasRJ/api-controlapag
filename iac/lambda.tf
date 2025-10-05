@@ -35,8 +35,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../lambda/charge-creation"
-  output_path = "${path.module}/../lambda/charge-creation.zip"
+  source_dir  = "${path.module}/lambda/charge-creation"
+  output_path = "${path.module}/lambda/charge-creation.zip"
 }
 
 resource "aws_lambda_function" "charge_creation_lambda" {
