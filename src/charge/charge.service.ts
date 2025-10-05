@@ -76,4 +76,20 @@ export class ChargeService {
     await this.chargeRepository.remove(charge);
     return charge;
   }
+
+  async countByEnrollmentByDate({
+    enrollmentId,
+    date,
+  }: {
+    enrollmentId: string;
+    date: Date;
+  }) {
+    const count = await this.chargeRepository.count({
+      where: {
+        enrollment: { id: enrollmentId },
+        dueDate: date,
+      },
+    });
+    return count;
+  }
 }

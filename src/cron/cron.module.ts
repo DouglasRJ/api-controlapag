@@ -8,6 +8,6 @@ import { CronService } from './cron.service';
   imports: [ChargeModule, EnrollmentsModule],
   controllers: [CronController],
   providers: [CronService],
-  exports: [CronModule],
+  exports: [CronService],
 })
 export class CronModule {}

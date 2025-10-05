@@ -1,13 +1,10 @@
 // src/cron/cron.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { EXCEPTION_ACTION } from 'src/charge-exception/enum/exception-action.enum';
 import { BILLING_MODEL } from 'src/charge-schedule/enum/billing-model.enum';
 import { RECURRENCE_INTERVAL } from 'src/charge-schedule/enum/recurrence-interval.enum';
 import { ChargeService } from 'src/charge/charge.service';
-import { Charge } from 'src/charge/entities/charge.entity';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
-import { Repository } from 'typeorm';
 
 @Injectable()
 export class CronService {
@@ -16,8 +13,6 @@ export class CronService {
   constructor(
     private readonly enrollmentsService: EnrollmentsService,
     private readonly chargeService: ChargeService,
-    @InjectRepository(Charge)
-    private readonly chargeRepository: Repository<Charge>,
   ) {}
 
   async createDailyCharges() {
@@ -176,11 +171,9 @@ export class CronService {
     enrollmentId: string,
     date: Date,
   ): Promise<boolean> {
-    const count = await this.chargeRepository.count({
-      where: {
-        enrollment: { id: enrollmentId },
-        dueDate: date,
-      },
+    const count = await this.chargeService.countByEnrollmentByDate({
+      enrollmentId,
+      date,
     });
     return count > 0;
   }
