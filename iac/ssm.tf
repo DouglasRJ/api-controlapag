@@ -1,7 +1,7 @@
 resource "aws_ssm_parameter" "api_public_ip" {
   name  = "/${var.project_name}/api/public_ip"
   type  = "String"
-  value = "not-set" 
+  value = "not-set"
 }
 
 resource "aws_iam_role_policy" "ecs_ssm_policy" {

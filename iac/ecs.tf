@@ -100,7 +100,7 @@ resource "aws_cloudwatch_log_group" "api" {
   name = "/ecs/${var.project_name}-api"
 }
 
- resource "aws_iam_policy" "ecs_secrets_policy" {
+resource "aws_iam_policy" "ecs_secrets_policy" {
   name        = "${var.project_name}-ecs-secrets-policy"
   description = "Allows ECS tasks to read specific secrets from Secrets Manager"
 
