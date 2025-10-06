@@ -45,10 +45,14 @@ resource "aws_ecs_task_definition" "api" {
     cpu       = tonumber(var.ecs_cpu)
     memory    = tonumber(var.ecs_memory)
     essential = true
+
+    command = ["/bin/sh", "-c", "aws sts get-caller-identity; sleep 3600"]
+
     portMappings = [{
       containerPort = 3000
       hostPort      = 3000
     }]
+
     secrets = [
       { name = "DB_PASSWORD", valueFrom = aws_secretsmanager_secret.db_password.arn },
       { name = "JWT_SECRET", valueFrom = aws_secretsmanager_secret.jwt_secret.arn },
@@ -76,7 +80,7 @@ resource "aws_ecs_task_definition" "api" {
       options = {
         "awslogs-group"         = "/ecs/${var.project_name}-api"
         "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "ecs"
+        "awslogs-stream-prefix" = "ecs-debug"
       }
     }
   }])
@@ -110,11 +114,7 @@ resource "aws_iam_policy" "ecs_secrets_policy" {
       {
         Effect = "Allow",
         Action = "secretsmanager:GetSecretValue",
-        Resource = [
-          aws_secretsmanager_secret.db_password.arn,
-          aws_secretsmanager_secret.jwt_secret.arn,
-          aws_secretsmanager_secret.internal_api_token.arn,
-        ]
+        Resource = "*"
       }
     ]
   })
