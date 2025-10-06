@@ -100,24 +100,27 @@ resource "aws_cloudwatch_log_group" "api" {
   name = "/ecs/${var.project_name}-api"
 }
 
-resource "aws_iam_role_policy" "ecs_execution_secrets_policy" {
-  name = "${var.project_name}-ecs-secrets-policy"
-  role = aws_iam_role.ecs_task_execution_role.id
+ resource "aws_iam_policy" "ecs_secrets_policy" {
+  name        = "${var.project_name}-ecs-secrets-policy"
+  description = "Allows ECS tasks to read specific secrets from Secrets Manager"
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
         Effect = "Allow",
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ],
+        Action = "secretsmanager:GetSecretValue",
         Resource = [
           aws_secretsmanager_secret.db_password.arn,
           aws_secretsmanager_secret.jwt_secret.arn,
-          aws_secretsmanager_secret.internal_api_token.arn
+          aws_secretsmanager_secret.internal_api_token.arn,
         ]
       }
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_secrets_policy_attachment" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.ecs_secrets_policy.arn
 }
