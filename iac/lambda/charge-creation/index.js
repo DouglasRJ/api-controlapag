@@ -1,24 +1,20 @@
 const fetch = require('node-fetch');
-const AWS = require('aws-sdk');
-
-const ssm = new AWS.SSM();
 
 exports.handler = async event => {
   console.log('Starting daily charge creation process...');
 
   const apiToken = process.env.INTERNAL_API_TOKEN;
-  const parameterName = process.env.API_IP_PARAMETER_NAME;
+  const apiUrl = process.env.API_URL;
 
-  if (!apiToken || !parameterName) {
-    console.error('Environment variables are not set.');
+  if (!apiToken || !apiUrl) {
+    console.error(
+      'Environment variables INTERNAL_API_TOKEN or API_URL are not set.',
+    );
     throw new Error('Missing environment variables.');
   }
 
   try {
-    console.log(`Fetching API IP from parameter: ${parameterName}`);
-    const parameter = await ssm.getParameter({ Name: parameterName }).promise();
-    const apiUrl = `http://${parameter.Parameter.Value}:3000`;
-    console.log(`API URL found: ${apiUrl}`);
+    console.log(`Calling API URL: ${apiUrl}`);
 
     const response = await fetch(`${apiUrl}/cron/create-daily-charges`, {
       method: 'POST',

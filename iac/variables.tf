@@ -1,9 +1,6 @@
 variable "aws_region" {
   type        = string
-}
-
-variable "project_name" {
-  type        = string
+  default     = "sa-east-1"
 }
 
 variable "db_password" {
@@ -11,27 +8,9 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "db_instance_class" {
-  type        = string
-}
-
 variable "jwt_secret" {
   type        = string
   sensitive   = true
-}
-
-variable "jwt_expiration" {
-  type        = string
-  default     = "1d"
-}
-
-variable "s3_bucket" {
-  type        = string
-}
-
-variable "disable_manage_file" {
-  type        = string
-  default     = "0" 
 }
 
 variable "internal_api_token" {
@@ -39,10 +18,6 @@ variable "internal_api_token" {
   sensitive   = true
 }
 
-variable "ecs_cpu" {
-  type        = string
-}
-
-variable "ecs_memory" {
+variable "s3_bucket" {
   type        = string
 }
