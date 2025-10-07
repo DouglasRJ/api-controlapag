@@ -27,6 +27,7 @@ resource "aws_db_instance" "default" {
   db_subnet_group_name = aws_db_subnet_group.default.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
   skip_final_snapshot  = true 
+  db_name                = var.project_name 
 }
 
 resource "aws_secretsmanager_secret" "jwt_secret" {
