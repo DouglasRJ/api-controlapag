@@ -59,6 +59,11 @@ jobs:
         run: terraform plan
         working-directory: ./iac
 
+      - name: Debug AWS Region
+        if: github.event.inputs.action == 'apply'
+        run: echo "The AWS region is ${{ secrets.AWS_REGION }}"
+        working-directory: ./iac
+
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
         run: terraform apply -auto-approve
