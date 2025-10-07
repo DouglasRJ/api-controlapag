@@ -1,14 +1,4 @@
-data "aws_secretsmanager_secret_version" "db_password" {
-  secret_id = aws_secretsmanager_secret.db_password.id
-}
-
-data "aws_secretsmanager_secret_version" "jwt_secret" {
-  secret_id = aws_secretsmanager_secret.jwt_secret.id
-}
-
-data "aws_secretsmanager_secret_version" "internal_api_token" {
-  secret_id = aws_secretsmanager_secret.internal_api_token.id
-}
+# iac/app_runner.tf
 
 resource "aws_apprunner_service" "main" {
   service_name = "controlapag-api-service"
@@ -19,24 +9,21 @@ resource "aws_apprunner_service" "main" {
       image_repository_type = "ECR"
       image_configuration {
         port = "8080"
+        # CORREÇÃO: Removidos os "data" sources. Agora pegamos os valores diretamente dos recursos criados em rds.tf.
         runtime_environment_variables = {
           DB_HOST               = aws_db_instance.default.address
           DB_PORT               = tostring(aws_db_instance.default.port)
           DB_USERNAME           = aws_db_instance.default.username
-          DB_DATABASE           = "controlapag-api"
-          DB_PASSWORD           = data.aws_secretsmanager_secret_version.db_password.secret_string
+          DB_DATABASE           = "controlapag-db"
+          DB_PASSWORD           = aws_secretsmanager_secret_version.db_password_version.secret_string
           DB_AUTO_LOAD_ENTITIES = "1"
-
-          JWT_SECRET     = data.aws_secretsmanager_secret_version.jwt_secret.secret_string
-          JWT_EXPIRATION = "1d"
-
-          S3_BUCKET           = var.s3_bucket
-          S3_REGION           = var.aws_region
-          DISABLE_MANAGE_FILE = "0"
-
-          INTERNAL_API_TOKEN = data.aws_secretsmanager_secret_version.internal_api_token.secret_string
-
-          NODE_ENV = "production"
+          JWT_SECRET            = aws_secretsmanager_secret_version.jwt_secret_version.secret_string
+          JWT_EXPIRATION        = "1d"
+          S3_BUCKET             = var.s3_bucket
+          S3_REGION             = var.aws_region
+          DISABLE_MANAGE_FILE   = "0"
+          INTERNAL_API_TOKEN    = aws_secretsmanager_secret_version.internal_api_token_version.secret_string
+          NODE_ENV              = "production"
         }
       }
     }
@@ -59,6 +46,7 @@ resource "aws_apprunner_service" "main" {
   }
 }
 
+# --- Recursos de Suporte (sem alterações) ---
 resource "aws_apprunner_vpc_connector" "main" {
   vpc_connector_name = "controlapag-vpc-connector"
   subnets            = module.vpc.private_subnets
