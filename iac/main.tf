@@ -7,12 +7,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "terraform-controlapag"
-    key    = "controlapag/dev/terraform.tfstate"
-    region = "sa-east-1"
+    key = "controlapag/dev/terraform.tfstate"
   }
 }
 
 provider "aws" {
-  region = "sa-east-1"
 }
