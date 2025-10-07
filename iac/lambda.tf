@@ -35,8 +35,8 @@ resource "aws_lambda_function" "charge_creation_lambda" {
 
   environment {
     variables = {
-      INTERNAL_API_TOKEN = data.aws_secretsmanager_secret_version.internal_api_token.secret_string
-      API_URL            = aws_apprunner_service.main.service_url
+      INTERNAL_API_TOKEN = aws_secretsmanager_secret_version.internal_api_token_version.secret_string
+      API_URL            = "https://${aws_apprunner_service.main.service_url}"
     }
   }
 
