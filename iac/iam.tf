@@ -1,0 +1,30 @@
+resource "aws_iam_policy" "ecs_secrets_policy" {
+  name        = "devcontrolapag-api-ecs-secrets-access-policy"
+  description = "Allows ECS tasks to access specific secrets from Secrets Manager"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.db_password.arn,
+          aws_secretsmanager_secret.jwt_secret.arn,
+          aws_secretsmanager_secret.internal_api_token.arn
+        ]
+      }
+    ]
+  })
+}
+
+data "aws_iam_role" "ecs_execution_role" {
+  name = "devcontrolapag-api-ecs-execution-role"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_secrets_attachment" {
+  role       = data.aws_iam_role.ecs_execution_role.name
+  policy_arn = aws_iam_policy.ecs_secrets_policy.arn
+}
