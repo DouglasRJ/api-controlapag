@@ -111,7 +111,7 @@ resource "aws_ecs_task_definition" "api" {
       { name = "DB_HOST", value = aws_db_instance.default.address },
       { name = "DB_PORT", value = tostring(aws_db_instance.default.port) },
       { name = "DB_USERNAME", value = aws_db_instance.default.username },
-      { name = "DB_DATABASE", value = var.project_name },
+      { name = "DB_DATABASE", value = local.db_name },
       { name = "DB_TYPE", value = "postgres" },
       { name = "DB_AUTO_LOAD_ENTITIES", value = "1" },
       { name = "DB_SYNCHRONIZE", value = "false" }, # Geralmente false em produção

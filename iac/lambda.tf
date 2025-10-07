@@ -64,7 +64,7 @@ resource "aws_lambda_function" "charge_creation_lambda" {
     variables = {
       DB_HOST            = aws_db_instance.default.address
       DB_PORT            = tostring(aws_db_instance.default.port)
-      DB_DATABASE        = var.project_name
+      DB_DATABASE        = local.db_name
       API_URL            = "http://${aws_lb.main.dns_name}" 
       INTERNAL_API_TOKEN = var.internal_api_token
     }
