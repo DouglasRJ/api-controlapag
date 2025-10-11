@@ -9,7 +9,7 @@ import { ChargeScheduleService } from 'src/charge-schedule/charge-schedule.servi
 import { ClientService } from 'src/client/client.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { Between, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { Enrollments } from './entities/enrollment.entity';
@@ -174,5 +174,27 @@ export class EnrollmentsService {
     }
 
     return enrollments;
+  }
+
+  async countActiveEnrollmentsForProvider(providerId: string): Promise<number> {
+    return this.enrollmentsRepository.count({
+      where: {
+        service: { provider: { id: providerId } },
+        status: ENROLLMENT_STATUS.ACTIVE,
+      },
+    });
+  }
+
+  async countNewEnrollmentsForProviderInDateRange(
+    providerId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
+    return this.enrollmentsRepository.count({
+      where: {
+        service: { provider: { id: providerId } },
+        createdAt: Between(startDate, endDate),
+      },
+    });
   }
 }

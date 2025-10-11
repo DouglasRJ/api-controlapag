@@ -13,6 +13,7 @@ import { ProviderService } from 'src/provider/provider.service';
 import { UserService } from 'src/user/user.service';
 import Stripe from 'stripe';
 import { GatewayPaymentService } from './gateway-payment.service';
+import { Balance, Payout } from './types/gateway.dtos';
 
 @Injectable()
 export class StripeService implements GatewayPaymentService {
@@ -313,6 +314,55 @@ export class StripeService implements GatewayPaymentService {
           },
         });
       }
+    }
+  }
+
+  async getBalance(accountId: string): Promise<Balance> {
+    try {
+      const balance = await this.stripe.balance.retrieve({
+        stripeAccount: accountId,
+      });
+
+      return {
+        available: (balance.available[0]?.amount || 0) / 100,
+        pending: (balance.pending[0]?.amount || 0) / 100,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to retrieve balance for account ${accountId}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Could not retrieve provider balance.',
+      );
+    }
+  }
+
+  async listPayouts(accountId: string): Promise<Payout[]> {
+    try {
+      const payouts = await this.stripe.payouts.list(
+        {
+          limit: 10,
+        },
+        {
+          stripeAccount: accountId,
+        },
+      );
+
+      return payouts.data.map(p => ({
+        id: p.id,
+        amount: p.amount / 100,
+        arrival_date: new Date(p.arrival_date * 1000),
+        status: p.status,
+      }));
+    } catch (error) {
+      this.logger.error(
+        `Failed to list payouts for account ${accountId}`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Could not list provider payouts.',
+      );
     }
   }
 }

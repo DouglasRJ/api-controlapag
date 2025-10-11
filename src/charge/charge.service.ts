@@ -101,4 +101,25 @@ export class ChargeService {
     charge.paidAt = paidAt;
     return this.chargeRepository.save(charge);
   }
+
+  async getTotalRevenueForProviderInDateRange(
+    providerId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
+    const result = await this.chargeRepository
+      .createQueryBuilder('charge')
+      .select('SUM(charge.amount)', 'total')
+      .innerJoin('charge.enrollment', 'enrollment')
+      .innerJoin('enrollment.service', 'service')
+      .where('service.providerId = :providerId', { providerId })
+      .andWhere('charge.status = :status', { status: 'PAID' })
+      .andWhere('charge.paidAt >= :startDate', { startDate })
+      .andWhere('charge.paidAt <= :endDate', { endDate })
+      .getRawOne<{ total: string }>();
+
+    if (!result) return 0;
+
+    return parseFloat(result.total) || 0;
+  }
 }

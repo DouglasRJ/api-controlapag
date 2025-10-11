@@ -1,4 +1,4 @@
-import { Customer } from './types/gateway.dtos';
+import { Balance, Customer, Payout } from './types/gateway.dtos';
 
 export abstract class GatewayPaymentService {
   abstract createCustomer({
@@ -37,4 +37,8 @@ export abstract class GatewayPaymentService {
     refreshUrl: string,
     returnUrl: string,
   ): Promise<{ url: string }>;
+
+  abstract getBalance(accountId: string): Promise<Balance>;
+
+  abstract listPayouts(accountId: string): Promise<Payout[]>;
 }

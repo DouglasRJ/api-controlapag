@@ -111,4 +111,28 @@ export class ClientService {
 
     return client;
   }
+
+  async countTotalClientsForProvider(providerId: string): Promise<number> {
+    return this.clientRepository
+      .createQueryBuilder('client')
+      .innerJoin('client.enrollments', 'enrollment')
+      .innerJoin('enrollment.service', 'service')
+      .where('service.providerId = :providerId', { providerId })
+      .getCount();
+  }
+
+  async countNewClientsForProviderInDateRange(
+    providerId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
+    return this.clientRepository
+      .createQueryBuilder('client')
+      .innerJoin('client.enrollments', 'enrollment')
+      .innerJoin('enrollment.service', 'service')
+      .where('service.providerId = :providerId', { providerId })
+      .andWhere('client.createdAt >= :startDate', { startDate })
+      .andWhere('client.createdAt <= :endDate', { endDate })
+      .getCount();
+  }
 }
