@@ -28,6 +28,9 @@ export class Client {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @Column({ nullable: true })
+  paymentCustomerId?: string;
+
   @OneToOne(() => User, user => user.clientProfile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;

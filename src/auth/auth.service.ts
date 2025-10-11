@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CreateClientDto } from 'src/client/dto/create-client.dto';
 import { Client } from 'src/client/entities/client.entity';
+import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
 import { HashService } from 'src/common/hash/hash.service';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { Provider } from 'src/provider/entities/provider.entity';
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly hashService: HashService,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
+    private readonly gatewayPaymentService: GatewayPaymentService,
   ) {}
 
   async login({ loginDto }: { loginDto: LoginDto }) {
@@ -87,12 +89,18 @@ export class AuthService {
           transactionalEntityManager,
         });
 
+        const profilePayment = await this.gatewayPaymentService.createCustomer({
+          email: createUserDto.email,
+          name: createUserDto.title,
+        });
+
         const newProviderProfile = transactionalEntityManager.create(Provider, {
           title: createUserDto.title,
           bio: createUserDto.bio,
           businessPhone: createUserDto.businessPhone,
           address: createUserDto.address,
           user: newUser,
+          paymentCustomerId: profilePayment.id,
         });
         await transactionalEntityManager.save(newProviderProfile);
 

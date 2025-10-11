@@ -93,4 +93,25 @@ export class ChargeService {
 
     return count;
   }
+
+  // async updatePaymentInfo(
+  //   chargeId: string,
+  //   paymentGatewayId: string,
+  //   paymentInfo: string,
+  // ): Promise<Charge> {
+  //   const charge = await this.findOneByOrFail({ id: chargeId });
+  //   charge.paymentGatewayId = paymentGatewayId;
+  //   charge.paymentInfo = paymentInfo;
+  //   return this.chargeRepository.save(charge);
+  // }
+
+  // /**
+  //  * Marca uma cobrança como paga.
+  //  */
+  // async markAsPaid(chargeId: string, paidAt: Date): Promise<Charge> {
+  //   const charge = await this.findOneByOrFail({ id: chargeId });
+  //   charge.status = CHARGE_STATUS.PAID;
+  //   charge.paidAt = paidAt;
+  //   return this.chargeRepository.save(charge);
+  // }
 }

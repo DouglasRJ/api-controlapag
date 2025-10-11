@@ -12,9 +12,11 @@ import { ChargeModule } from './charge/charge.module';
 import { ClientModule } from './client/client.module';
 import { CronModule } from './cron/cron.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { PaymentModule } from './payment/payment.module';
 import { ProviderModule } from './provider/provider.module';
 import { ServicesModule } from './services/services.module';
 import { UserModule } from './user/user.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -55,6 +57,8 @@ import { UserModule } from './user/user.module';
     ChargeExceptionModule,
     ChargeModule,
     CronModule,
+    PaymentModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [

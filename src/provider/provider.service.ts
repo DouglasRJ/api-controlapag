@@ -32,7 +32,6 @@ export class ProviderService {
         ...(getEnrollments ? ['services.enrollments'] : []),
       ],
     });
-
     if (!provider) {
       throw new NotFoundException('Provider not found');
     }
@@ -103,6 +102,15 @@ export class ProviderService {
     provider.bio = updateProviderDto.bio ?? provider.bio;
     provider.businessPhone =
       updateProviderDto.businessPhone ?? provider.businessPhone;
+    provider.status = updateProviderDto.status ?? provider.status;
+
+    if (updateProviderDto.paymentCustomerId) {
+      provider.paymentCustomerId = updateProviderDto.paymentCustomerId;
+    }
+
+    if (updateProviderDto.subscriptionId) {
+      provider.subscriptionId = updateProviderDto.subscriptionId;
+    }
 
     const updated = await this.providerRepository.save(provider);
 
