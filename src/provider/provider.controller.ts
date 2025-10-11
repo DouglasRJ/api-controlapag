@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -55,5 +56,13 @@ export class ProviderController {
       userId: req.user.id,
     });
     return new ProviderResponseDto(provider);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('connect-account')
+  async connectAccount(@Req() req: AuthenticatedRequest) {
+    return this.providerService.createProviderConnection({
+      userId: req.user.id,
+    });
   }
 }

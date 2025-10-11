@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProviderDto } from './dto/create-provider.dto';
@@ -18,6 +19,7 @@ export class ProviderService {
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
     private readonly userService: UserService,
+    private readonly gatewayPaymentService: GatewayPaymentService,
   ) {}
 
   async findOneByOrFail(
@@ -143,5 +145,34 @@ export class ProviderService {
     const provider = await this.findOneByOrFail({ id: providerId });
 
     return provider;
+  }
+
+  async createProviderConnection({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    let provider = user.providerProfile;
+
+    if (!provider.providerPaymentId) {
+      const newAccount =
+        await this.gatewayPaymentService.createConnectedAccount({
+          email: user.email,
+        });
+      provider.providerPaymentId = newAccount.id;
+      provider = await this.providerRepository.save(provider);
+    }
+
+    const refreshUrl = 'http://localhost:8080/reauth';
+    const returnUrl = 'http://localhost:8080/return';
+
+    const accountLink = await this.gatewayPaymentService.createAccountLink(
+      provider.providerPaymentId!,
+      refreshUrl,
+      returnUrl,
+    );
+
+    return accountLink;
   }
 }

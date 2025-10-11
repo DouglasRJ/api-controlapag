@@ -67,8 +67,6 @@ export class ClientService {
       true,
     );
 
-    console.log('client', client);
-
     return client;
   }
 

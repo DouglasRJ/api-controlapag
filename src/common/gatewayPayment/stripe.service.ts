@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ChargeService } from 'src/charge/charge.service';
 import { PROVIDER_STATUS } from 'src/provider/enum/provider-status.enum';
 import { ProviderService } from 'src/provider/provider.service';
 import { UserService } from 'src/user/user.service';
@@ -25,6 +26,8 @@ export class StripeService implements GatewayPaymentService {
     private readonly userService: UserService,
     @Inject(forwardRef(() => ProviderService))
     private readonly providerService: ProviderService,
+    @Inject(forwardRef(() => ChargeService))
+    private readonly chargeService: ChargeService,
   ) {
     const configStripeApiKey = this.configService.get<string>('STRIPE_API_KEY');
     if (!configStripeApiKey) {
@@ -46,6 +49,65 @@ export class StripeService implements GatewayPaymentService {
     this.webhookSecret = configWebhookSecret;
   }
 
+  async createSubscriptionCheckout(options: {
+    customerEmail: string;
+    clientReferenceId: string;
+    planId: string;
+  }): Promise<{ url: string }> {
+    const customer = await this.createCustomer({
+      email: options.customerEmail,
+    });
+
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      client_reference_id: options.clientReferenceId,
+      customer: customer.id,
+      success_url: `http://localhost:8080/subscription/success`,
+      cancel_url: `http://localhost:8080/subscription/error`,
+      line_items: [{ price: options.planId, quantity: 1 }],
+    });
+
+    if (!session.url) {
+      throw new BadRequestException('Subscription checkout URL not created');
+    }
+    return { url: session.url };
+  }
+
+  async createChargePaymentCheckout(options: {
+    customerEmail: string;
+    clientReferenceId: string;
+    lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+    onBehalfOfAccountId: string;
+    applicationFeeAmount: number;
+  }): Promise<{ url: string }> {
+    const customer = await this.createCustomer({
+      email: options.customerEmail,
+    });
+
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'boleto'],
+      mode: 'payment',
+      client_reference_id: options.clientReferenceId,
+      customer: customer.id,
+      success_url: `http://localhost:8080/payment/success`,
+      cancel_url: `http://localhost:8080/payment/error`,
+      line_items: options.lineItems,
+      payment_intent_data: {
+        application_fee_amount: options.applicationFeeAmount,
+        transfer_data: {
+          destination: options.onBehalfOfAccountId,
+        },
+        on_behalf_of: options.onBehalfOfAccountId,
+      },
+    });
+
+    if (!session.url) {
+      throw new BadRequestException('Charge payment checkout URL not created');
+    }
+    return { url: session.url };
+  }
+
   async getStripeCustomerByEmail(email: string) {
     const customer = await this.stripe.customers.list({ email });
     return customer.data[0];
@@ -61,84 +123,57 @@ export class StripeService implements GatewayPaymentService {
     });
   }
 
-  async generateCheckout({
-    email,
-    userId,
-    paymentMethodTypes,
-    mode,
-    idPlan,
-  }: {
-    email: string;
-    userId: string;
-    paymentMethodTypes: Array<'card'>;
-    mode: 'subscription';
-    idPlan: string;
-  }) {
-    try {
-      const customer = await this.createCustomer({
-        email,
-      });
-
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: paymentMethodTypes,
-        mode: mode,
-        client_reference_id: userId,
-        customer: customer.id,
-        success_url: `http://localhost:8080/done`,
-        cancel_url: `http://localhost:8080/error`,
-        line_items: [
-          {
-            price: idPlan,
-            quantity: 1,
-          },
-        ],
-      });
-
-      if (!session.url) {
-        throw new BadRequestException('Checkout not created');
-      }
-
-      return {
-        url: session.url,
-      };
-    } catch (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException(error);
-    }
-  }
-
   async handleCheckoutSessionCompleted(event: {
     data: { object: Stripe.Checkout.Session };
   }) {
-    const { object: data } = event.data;
-    const userId = data.client_reference_id;
-    const stripeSubscriptionId = data.subscription as string;
-    const stripeCustomerId = data.customer as string;
-    const checkoutStatus = data.status;
+    const session = event.data.object;
+    const checkoutStatus = session.status;
 
-    if (checkoutStatus !== 'complete') return;
-
-    if (!userId || !stripeSubscriptionId || !stripeCustomerId) {
-      throw new BadRequestException(
-        'UserId, stripeSubscriptionId, stripeCustomerId is required',
-      );
+    if (checkoutStatus !== 'complete') {
+      return;
     }
 
-    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (session.mode === 'subscription') {
+      this.logger.log(`Handling completed subscription session...`);
+      const userId = session.client_reference_id;
+      const stripeSubscriptionId = session.subscription as string;
+      const stripeCustomerId = session.customer as string;
 
-    const provider = await this.providerService.findOneByOrFail({
-      id: user.providerProfile.id,
-    });
+      if (!userId || !stripeSubscriptionId || !stripeCustomerId) {
+        throw new BadRequestException(
+          'Subscription session is missing required data.',
+        );
+      }
 
-    await this.providerService.update({
-      providerId: provider.id,
-      userId: user.id,
-      updateProviderDto: {
-        paymentCustomerId: stripeCustomerId,
-        subscriptionId: stripeSubscriptionId,
-        status: PROVIDER_STATUS.ACTIVE,
-      },
-    });
+      const user = await this.userService.findOneByOrFail({ id: userId });
+      const provider = await this.providerService.findOneByOrFail({
+        id: user.providerProfile.id,
+      });
+
+      await this.providerService.update({
+        providerId: provider.id,
+        userId: user.id,
+        updateProviderDto: {
+          paymentCustomerId: stripeCustomerId,
+          subscriptionId: stripeSubscriptionId,
+          status: PROVIDER_STATUS.ACTIVE,
+        },
+      });
+      this.logger.log(`Provider ${provider.id} subscription activated.`);
+    }
+
+    if (session.mode === 'payment') {
+      this.logger.log(`Handling completed payment session...`);
+      const chargeId = session.client_reference_id;
+
+      if (!chargeId) {
+        throw new BadRequestException('Payment session is missing charge ID.');
+      }
+
+      await this.chargeService.markAsPaid(chargeId, new Date());
+
+      this.logger.log(`Charge ${chargeId} marked as PAID.`);
+    }
   }
 
   async handleSubscriptionSessionCompleted(event: {
@@ -221,10 +256,63 @@ export class StripeService implements GatewayPaymentService {
         await this.handleCancelPlan(event);
         break;
 
+      case 'account.updated':
+        await this.handleAccountUpdated(event.data.object);
+        break;
+
       default:
         this.logger.warn(`Unhandled event type ${event.type}`);
     }
 
     return { received: true };
+  }
+
+  async createConnectedAccount(options: {
+    email: string;
+  }): Promise<{ id: string }> {
+    const account = await this.stripe.accounts.create({
+      type: 'express',
+      email: options.email,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+    return { id: account.id };
+  }
+
+  async createAccountLink(
+    accountId: string,
+    refreshUrl: string,
+    returnUrl: string,
+  ): Promise<{ url: string }> {
+    const accountLink = await this.stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_onboarding',
+    });
+    return { url: accountLink.url };
+  }
+
+  private async handleAccountUpdated(account: Stripe.Account) {
+    if (account.payouts_enabled) {
+      const provider = await this.providerService.findOneByOrFail({
+        providerPaymentId: account.id,
+      });
+
+      if (provider && provider.status !== PROVIDER_STATUS.ACTIVE) {
+        this.logger.log(
+          `Provider account ${account.id} is now enabled for payouts. Updating status to ACTIVE.`,
+        );
+        await this.providerService.update({
+          providerId: provider.id,
+          userId: provider.user.id,
+          updateProviderDto: {
+            status: PROVIDER_STATUS.ACTIVE,
+          },
+        });
+      }
+    }
   }
 }

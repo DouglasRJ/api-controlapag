@@ -14,7 +14,7 @@ import { ChargeResponseDto } from './dto/charge-response.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 
-@Controller('charge-')
+@Controller('charge')
 export class ChargeController {
   constructor(private readonly chargeService: ChargeService) {}
   @Get()

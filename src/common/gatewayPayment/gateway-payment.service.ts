@@ -9,22 +9,32 @@ export abstract class GatewayPaymentService {
     name: string;
   }): Promise<Customer>;
 
-  abstract generateCheckout({
-    email,
-    userId,
-    paymentMethodTypes,
-    mode,
-    idPlan,
-  }: {
-    email: string;
-    userId: string;
-    paymentMethodTypes: Array<'card' | 'pix'>;
-    mode: 'subscription';
-    idPlan: string;
+  abstract createSubscriptionCheckout(options: {
+    customerEmail: string;
+    clientReferenceId: string;
+    planId: string;
+  }): Promise<{ url: string }>;
+
+  abstract createChargePaymentCheckout(options: {
+    customerEmail: string;
+    clientReferenceId: string;
+    lineItems: any[];
+    onBehalfOfAccountId: string;
+    applicationFeeAmount: number;
   }): Promise<{ url: string }>;
 
   abstract handleWebhook(
     payload: Buffer,
     signature: string,
   ): Promise<{ received: boolean }>;
+
+  abstract createConnectedAccount(options: {
+    email: string;
+  }): Promise<{ id: string }>;
+
+  abstract createAccountLink(
+    accountId: string,
+    refreshUrl: string,
+    returnUrl: string,
+  ): Promise<{ url: string }>;
 }

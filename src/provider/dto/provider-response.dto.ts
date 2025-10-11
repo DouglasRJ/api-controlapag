@@ -13,6 +13,7 @@ export class ProviderResponseDto {
   readonly updatedAt: Date;
   readonly paymentCustomerId?: string;
   readonly subscriptionId?: string;
+  readonly providerPaymentId?: string;
 
   readonly services?: ServiceResponseDto[];
 
@@ -27,6 +28,7 @@ export class ProviderResponseDto {
     this.updatedAt = provider.updatedAt;
     this.paymentCustomerId = provider.paymentCustomerId;
     this.subscriptionId = provider.subscriptionId;
+    this.providerPaymentId = provider.providerPaymentId;
 
     if (provider?.services?.length) {
       this.services = provider.services?.map(s => new ServiceResponseDto(s));

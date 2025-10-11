@@ -1,4 +1,5 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { ChargeModule } from 'src/charge/charge.module';
 import { ProviderModule } from 'src/provider/provider.module';
 import { UserModule } from 'src/user/user.module';
 import { GatewayPaymentService } from './gatewayPayment/gateway-payment.service';
@@ -9,7 +10,11 @@ import { ManageFileService } from './manageFile/manageFile.service';
 import { S3Service } from './manageFile/s3-manageFile.service';
 
 @Module({
-  imports: [forwardRef(() => UserModule), forwardRef(() => ProviderModule)],
+  imports: [
+    forwardRef(() => UserModule),
+    forwardRef(() => ProviderModule),
+    forwardRef(() => ChargeModule),
+  ],
   providers: [
     {
       provide: HashService,

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -20,14 +20,14 @@ export class PaymentController {
     });
   }
 
-  // @UseGuards(AuthGuard('jwt'))
-  // @Post('charge/:chargeId')
-  // createChargePayment(
-  //   @Param('chargeId') chargeId: string,
-  //   @Req() req: AuthenticatedRequest,
-  // ) {
-  //   return this.paymentService.createClientChargePayment(chargeId, req.user);
-  // }
+  @UseGuards(AuthGuard('jwt'))
+  @Post('charge/:chargeId')
+  createChargePayment(
+    @Param('chargeId') chargeId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.paymentService.createClientChargePayment(chargeId, req.user);
+  }
 
   // @Post('webhook')
   // async handleWebhook(

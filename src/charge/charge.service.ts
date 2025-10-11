@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 import { Charge } from './entities/charge.entity';
+import { CHARGE_STATUS } from './enum/charge-status.enum';
 
 @Injectable()
 export class ChargeService {
@@ -14,9 +15,10 @@ export class ChargeService {
     private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
-  async findOneByOrFail(chargeData: Partial<Charge>) {
+  async findOneByOrFail(chargeData: Partial<Charge>, getEnrollment = false) {
     const charge = await this.chargeRepository.findOne({
       where: chargeData,
+      relations: [...(getEnrollment ? ['enrollment'] : [])],
     });
 
     if (!charge) {
@@ -63,7 +65,6 @@ export class ChargeService {
     const charge = await this.chargeRepository.findOneByOrFail({
       id: chargeId,
     });
-
     this.chargeRepository.merge(charge, updateChargeDto);
 
     return this.chargeRepository.save(charge);
@@ -94,24 +95,10 @@ export class ChargeService {
     return count;
   }
 
-  // async updatePaymentInfo(
-  //   chargeId: string,
-  //   paymentGatewayId: string,
-  //   paymentInfo: string,
-  // ): Promise<Charge> {
-  //   const charge = await this.findOneByOrFail({ id: chargeId });
-  //   charge.paymentGatewayId = paymentGatewayId;
-  //   charge.paymentInfo = paymentInfo;
-  //   return this.chargeRepository.save(charge);
-  // }
-
-  // /**
-  //  * Marca uma cobrança como paga.
-  //  */
-  // async markAsPaid(chargeId: string, paidAt: Date): Promise<Charge> {
-  //   const charge = await this.findOneByOrFail({ id: chargeId });
-  //   charge.status = CHARGE_STATUS.PAID;
-  //   charge.paidAt = paidAt;
-  //   return this.chargeRepository.save(charge);
-  // }
+  async markAsPaid(chargeId: string, paidAt: Date): Promise<Charge> {
+    const charge = await this.findOneByOrFail({ id: chargeId });
+    charge.status = CHARGE_STATUS.PAID;
+    charge.paidAt = paidAt;
+    return this.chargeRepository.save(charge);
+  }
 }
