@@ -16,6 +16,7 @@ import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
 import { DataSource, EntityManager } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 
 @Injectable()
@@ -136,5 +137,27 @@ export class AuthService {
 
   async removeUser({ userId }: { userId: string }) {
     await this.userService.remove(userId);
+  }
+
+  async setInitialPassword(
+    setInitialPasswordDto: SetInitialPasswordDto,
+  ): Promise<User> {
+    try {
+      const payload: JwtPayload = await this.jwtService.verifyAsync(
+        setInitialPasswordDto.token,
+      );
+
+      const user = await this.userService.findOneByOrFail({ id: payload.sub });
+
+      const hashedPassword = await this.hashService.hash(
+        setInitialPasswordDto.newPassword,
+      );
+
+      user.password = hashedPassword;
+
+      return this.userService.save(user);
+    } catch (error) {
+      throw new UnauthorizedException(`Invalid or expired token: ${error}`);
+    }
   }
 }

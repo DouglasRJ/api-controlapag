@@ -3,8 +3,10 @@ import { ClientResponseDto } from 'src/client/dto/client-response.dto';
 import { CreateClientDto } from 'src/client/dto/create-client.dto';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { ProviderResponseDto } from 'src/provider/dto/provider-response.dto';
+import { UserResponseDto } from 'src/user/dto/user-response.dto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -29,5 +31,15 @@ export class AuthController {
       createUserDto: createClientDto,
     });
     return new ClientResponseDto(client);
+  }
+
+  @Post('set-initial-password')
+  async setInitialPassword(
+    @Body() setInitialPasswordDto: SetInitialPasswordDto,
+  ) {
+    const user = await this.authService.setInitialPassword(
+      setInitialPasswordDto,
+    );
+    return new UserResponseDto(user);
   }
 }

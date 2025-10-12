@@ -92,12 +92,13 @@ export class UserService {
 
   async updatePassword(id: string, updateUserDto: UpdatePasswordDto) {
     const user = await this.findOneByOrFail({ id });
-
+    console.log('user', user);
+    console.log('updateUserDTO', updateUserDto);
     const isCurrentPasswordValid = await this.hashService.compare(
       updateUserDto.currentPassword,
       user.password,
     );
-
+    console.log('isCurrentPasswordValid', isCurrentPasswordValid);
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('Current password invalid');
     }
@@ -131,5 +132,9 @@ export class UserService {
 
     const updated = await this.userRepository.save(user);
     return updated;
+  }
+
+  async save(user: User): Promise<User> {
+    return this.userRepository.save(user);
   }
 }

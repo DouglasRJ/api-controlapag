@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
+import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { CreateManualChargeDto } from './dto/create-manual-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 import { Charge } from './entities/charge.entity';
 import { CHARGE_STATUS } from './enum/charge-status.enum';
@@ -129,5 +135,31 @@ export class ChargeService {
       charge.status = CHARGE_STATUS.CANCELED;
     }
     return this.chargeRepository.save(charge);
+  }
+
+  async createManualCharge(
+    user: User,
+    createManualChargeDto: CreateManualChargeDto,
+  ) {
+    const { enrollmentId, amount, dueDate } = createManualChargeDto;
+
+    const enrollment = await this.enrollmentsService.findOneByOrFail({
+      id: enrollmentId,
+    });
+
+    if (enrollment.service.provider.user.id !== user.id) {
+      throw new UnauthorizedException(
+        'You do not have permission to create charges for this enrollment.',
+      );
+    }
+
+    const newCharge = this.chargeRepository.create({
+      amount,
+      dueDate,
+      status: CHARGE_STATUS.PENDING,
+      enrollment,
+    });
+
+    return this.chargeRepository.save(newCharge);
   }
 }
