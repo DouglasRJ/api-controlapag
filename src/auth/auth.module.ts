@@ -15,6 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     ProviderModule,
     ClientModule,
     JwtModule.registerAsync({
+      global: true,
       useFactory: () => {
         const secret = process.env.JWT_SECRET;
 

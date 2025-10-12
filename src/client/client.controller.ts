@@ -13,6 +13,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { ClientService } from './client.service';
 import { ClientResponseDto } from './dto/client-response.dto';
+import { CreateClientByProviderResponseDto } from './dto/create-client-by-provider-response.dto';
 import { CreateClientByProviderDto } from './dto/create-client-by-provider.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
@@ -65,10 +66,10 @@ export class ClientController {
     @Req() req: AuthenticatedRequest,
     @Body() createClientDto: CreateClientByProviderDto,
   ) {
-    const client = await this.clientService.createClientByProvider({
+    const data = await this.clientService.createClientByProvider({
       providerUserId: req.user.id,
       createClientDto,
     });
-    return new ClientResponseDto(client);
+    return new CreateClientByProviderResponseDto(data);
   }
 }

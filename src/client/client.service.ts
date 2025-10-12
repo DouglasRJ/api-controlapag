@@ -4,8 +4,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
+import { JwtPayload } from 'src/auth/types/jwt-payload.type';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
 import { DataSource, Repository } from 'typeorm';
@@ -21,6 +24,7 @@ export class ClientService {
     private readonly clientRepository: Repository<Client>,
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
   ) {}
 
   async findOneByOrFail(clientData: Partial<Client>, getEnrollments = false) {
@@ -153,17 +157,20 @@ export class ClientService {
     if (!providerUser.providerProfile) {
       throw new UnauthorizedException('Only providers can register clients.');
     }
+
     const tempPassword = randomBytes(16).toString('hex');
 
-    const newClient = await this.dataSource.transaction(
+    const newClientProfile = await this.dataSource.transaction(
       async transactionalEntityManager => {
+        const userToCreate: CreateUserDto = {
+          username: createClientDto.username,
+          email: createClientDto.email,
+          password: tempPassword,
+          role: USER_ROLE.CLIENT,
+        };
+
         const newUser = await this.userService.create(
-          {
-            username: createClientDto.username,
-            email: createClientDto.email,
-            password: tempPassword,
-            role: USER_ROLE.CLIENT,
-          },
+          userToCreate,
           transactionalEntityManager,
         );
 
@@ -176,6 +183,19 @@ export class ClientService {
         return transactionalEntityManager.save(newClientProfile);
       },
     );
-    return newClient;
+
+    const jwtPayload: JwtPayload = {
+      sub: newClientProfile.user.id,
+      email: newClientProfile.user.email,
+    };
+
+    const passwordSetupToken = await this.jwtService.signAsync(jwtPayload, {
+      expiresIn: '24h',
+    });
+
+    return {
+      client: newClientProfile,
+      passwordSetupToken,
+    };
   }
 }
