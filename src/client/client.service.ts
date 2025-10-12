@@ -5,8 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomBytes } from 'crypto';
+import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { CreateClientByProviderDto } from './dto/create-client-by-provider.dto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Client } from './entities/client.entity';
@@ -17,6 +20,7 @@ export class ClientService {
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
     private readonly userService: UserService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findOneByOrFail(clientData: Partial<Client>, getEnrollments = false) {
@@ -134,5 +138,44 @@ export class ClientService {
       .andWhere('client.createdAt >= :startDate', { startDate })
       .andWhere('client.createdAt <= :endDate', { endDate })
       .getCount();
+  }
+
+  async createClientByProvider({
+    providerUserId,
+    createClientDto,
+  }: {
+    providerUserId: string;
+    createClientDto: CreateClientByProviderDto;
+  }) {
+    const providerUser = await this.userService.findOneByOrFail({
+      id: providerUserId,
+    });
+    if (!providerUser.providerProfile) {
+      throw new UnauthorizedException('Only providers can register clients.');
+    }
+    const tempPassword = randomBytes(16).toString('hex');
+
+    const newClient = await this.dataSource.transaction(
+      async transactionalEntityManager => {
+        const newUser = await this.userService.create(
+          {
+            username: createClientDto.username,
+            email: createClientDto.email,
+            password: tempPassword,
+            role: USER_ROLE.CLIENT,
+          },
+          transactionalEntityManager,
+        );
+
+        const newClientProfile = transactionalEntityManager.create(Client, {
+          phone: createClientDto.phone,
+          address: createClientDto.address,
+          user: newUser,
+        });
+
+        return transactionalEntityManager.save(newClientProfile);
+      },
+    );
+    return newClient;
   }
 }

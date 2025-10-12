@@ -122,4 +122,12 @@ export class ChargeService {
 
     return parseFloat(result.total) || 0;
   }
+
+  async markAsFailed(chargeId: string): Promise<Charge> {
+    const charge = await this.findOneByOrFail({ id: chargeId });
+    if (charge.status === CHARGE_STATUS.PENDING) {
+      charge.status = CHARGE_STATUS.CANCELED;
+    }
+    return this.chargeRepository.save(charge);
+  }
 }

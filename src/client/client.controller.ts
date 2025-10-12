@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { ClientService } from './client.service';
 import { ClientResponseDto } from './dto/client-response.dto';
+import { CreateClientByProviderDto } from './dto/create-client-by-provider.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 
 @Controller('client')
@@ -53,6 +55,19 @@ export class ClientController {
     const client = await this.clientService.remove({
       userId: req.user.id,
       clientId: id,
+    });
+    return new ClientResponseDto(client);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('register-by-provider')
+  async createByProvider(
+    @Req() req: AuthenticatedRequest,
+    @Body() createClientDto: CreateClientByProviderDto,
+  ) {
+    const client = await this.clientService.createClientByProvider({
+      providerUserId: req.user.id,
+      createClientDto,
     });
     return new ClientResponseDto(client);
   }

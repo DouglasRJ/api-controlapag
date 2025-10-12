@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { HashService } from 'src/common/hash/hash.service';
 import { ManageFileService } from 'src/common/manageFile/manageFile.service';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -35,28 +35,38 @@ export class UserService {
     return user;
   }
 
-  async create(createUserDto: CreateUserDto) {
-    const user: User = new User();
-
-    const exists = await this.userRepository.exists({
-      where: {
-        email: createUserDto.email,
-      },
-    });
-
-    if (exists) {
-      throw new ConflictException('Email already exists');
-    }
-
+  async create(
+    createUserDto: CreateUserDto,
+    transactionalEntityManager?: EntityManager,
+  ) {
     const hashedPassword = await this.hashService.hash(createUserDto.password);
 
-    user.email = createUserDto.email;
-    user.username = createUserDto.username;
-    user.password = hashedPassword;
-    user.role = createUserDto.role;
+    const userData = {
+      email: createUserDto.email,
+      username: createUserDto.username,
+      password: hashedPassword,
+      role: createUserDto.role,
+    };
 
-    const created = await this.userRepository.save(user);
-    return created;
+    if (transactionalEntityManager) {
+      const exists = await transactionalEntityManager.exists(User, {
+        where: { email: createUserDto.email },
+      });
+      if (exists) {
+        throw new ConflictException('Email already exists');
+      }
+      const user = transactionalEntityManager.create(User, userData);
+      return transactionalEntityManager.save(user);
+    } else {
+      const exists = await this.userRepository.exists({
+        where: { email: createUserDto.email },
+      });
+      if (exists) {
+        throw new ConflictException('Email already exists');
+      }
+      const user = this.userRepository.create(userData);
+      return this.userRepository.save(user);
+    }
   }
 
   findAll() {

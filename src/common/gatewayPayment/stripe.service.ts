@@ -260,6 +260,9 @@ export class StripeService implements GatewayPaymentService {
       case 'account.updated':
         await this.handleAccountUpdated(event.data.object);
         break;
+      case 'payment_intent.payment_failed':
+        await this.handlePaymentIntentFailed(event.data.object);
+        break;
 
       default:
         this.logger.warn(`Unhandled event type ${event.type}`);
@@ -363,6 +366,22 @@ export class StripeService implements GatewayPaymentService {
       throw new InternalServerErrorException(
         'Could not list provider payouts.',
       );
+    }
+  }
+
+  private async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+    const sessions = await this.stripe.checkout.sessions.list({
+      payment_intent: paymentIntent.id,
+    });
+
+    if (sessions.data.length > 0) {
+      const session = sessions.data[0];
+      const chargeId = session.client_reference_id;
+
+      if (chargeId && session.mode === 'payment') {
+        this.logger.warn(`Payment failed for charge ID: ${chargeId}.`);
+        await this.chargeService.markAsFailed(chargeId);
+      }
     }
   }
 }
