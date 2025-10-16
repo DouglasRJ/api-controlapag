@@ -53,6 +53,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(jwtPayload);
 
     return {
+      user,
       accessToken,
     };
   }

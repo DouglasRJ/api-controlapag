@@ -17,17 +17,20 @@ export class CreateUserDto {
   @IsStrongPassword(
     {
       minLength: 8,
-      minUppercase: 1,
-      minLowercase: 1,
-      minNumbers: 1,
-      minSymbols: 1,
+      // minUppercase: 1,
+      // minLowercase: 1,
+      // minNumbers: 1,
+      // minSymbols: 1,
     },
+    // {
+    //   message: `Password must contain Minimum 8 and maximum 20 characters,
+    // at least one uppercase letter,
+    // one lowercase letter,
+    // one number and
+    // one special character`,
+    // },
     {
-      message: `Password must contain Minimum 8 and maximum 20 characters, 
-    at least one uppercase letter, 
-    one lowercase letter, 
-    one number and 
-    one special character`,
+      message: `A senha deve ter no mínimo 8 caracteres`,
     },
   )
   password: string;

@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
+import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
+import { ServiceResponseDto } from 'src/services/dto/service-response.dto';
 import { ProviderResponseDto } from './dto/provider-response.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { ProviderService } from './provider.service';
@@ -64,5 +66,23 @@ export class ProviderController {
     return this.providerService.createProviderConnection({
       userId: req.user.id,
     });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('services')
+  async getServices(@Req() req: AuthenticatedRequest) {
+    const services = await this.providerService.getServices({
+      userId: req.user.id,
+    });
+    return services.map(s => new ServiceResponseDto(s));
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('enrollments')
+  async getEnrollments(@Req() req: AuthenticatedRequest) {
+    const enrollments = await this.providerService.getEnrollments({
+      userId: req.user.id,
+    });
+    return enrollments.map(e => new EnrollmentsResponseDto(e));
   }
 }

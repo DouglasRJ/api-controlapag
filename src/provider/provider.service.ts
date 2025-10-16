@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
+import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProviderDto } from './dto/create-provider.dto';
@@ -20,14 +22,19 @@ export class ProviderService {
     private readonly providerRepository: Repository<Provider>,
     private readonly userService: UserService,
     private readonly gatewayPaymentService: GatewayPaymentService,
+    private readonly servicesService: ServicesService,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async findOneByOrFail(
     providerData: Partial<Provider>,
     getEnrollments = false,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { services, ...findCriteria } = providerData;
+
     const provider = await this.providerRepository.findOne({
-      where: providerData,
+      where: findCriteria,
       relations: [
         'user',
         'services',
@@ -174,5 +181,35 @@ export class ProviderService {
     );
 
     return accountLink;
+  }
+
+  async getServices({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    const provider = user.providerProfile;
+
+    const services = await this.servicesService.findAllByProvider({
+      providerId: provider.id,
+    });
+
+    return services;
+  }
+
+  async getEnrollments({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    const provider = user.providerProfile;
+
+    const enrollments = await this.enrollmentsService.findAllByProvider({
+      providerId: provider.id,
+    });
+
+    return enrollments;
   }
 }

@@ -1,5 +1,7 @@
 import { ChargeExceptionResponseDto } from 'src/charge-exception/dto/charge-exception-response.dto';
 import { ChargeScheduleResponseDto } from 'src/charge-schedule/dto/charge-schedule-response.dto';
+import { Client } from 'src/client/entities/client.entity';
+import { Service } from 'src/services/entities/service.entity';
 import { Enrollments } from '../entities/enrollment.entity';
 import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
 
@@ -15,6 +17,9 @@ export class EnrollmentsResponseDto {
   readonly chargeSchedule?: ChargeScheduleResponseDto;
   readonly chargeExceptions?: ChargeExceptionResponseDto[];
 
+  readonly client: Client;
+  readonly service: Service;
+
   constructor(enrollment: Enrollments) {
     this.id = enrollment.id;
     this.price = enrollment.price;
@@ -23,6 +28,8 @@ export class EnrollmentsResponseDto {
     this.status = enrollment.status;
     this.createdAt = enrollment.createdAt;
     this.updatedAt = enrollment.updatedAt;
+    this.client = enrollment.client;
+    this.service = enrollment.service;
 
     if (enrollment.chargeSchedule) {
       this.chargeSchedule = new ChargeScheduleResponseDto(

@@ -197,4 +197,23 @@ export class EnrollmentsService {
       },
     });
   }
+
+  async findAllByProvider({ providerId }: { providerId: string }) {
+    if (!providerId) {
+      throw new BadRequestException('Provider Id is missing');
+    }
+
+    const enrollments = await this.enrollmentsRepository.find({
+      where: {
+        service: {
+          provider: {
+            id: providerId,
+          },
+        },
+      },
+      relations: ['service', 'client', 'client.user'],
+    });
+
+    return enrollments;
+  }
 }

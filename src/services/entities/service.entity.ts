@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { PAYMENT_METHOD } from '../enum/payment-method.enum';
 
 @Entity()
 export class Service {
@@ -37,6 +38,21 @@ export class Service {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  address?: string;
+
+  @Column({
+    type: 'enum',
+    enum: PAYMENT_METHOD,
+    array: true,
+    default: [
+      PAYMENT_METHOD.PIX,
+      PAYMENT_METHOD.CASH,
+      PAYMENT_METHOD.CREDIT_CARD,
+    ],
+  })
+  allowedPaymentMethods: PAYMENT_METHOD[];
 
   @ManyToOne(() => Provider, provider => provider.services)
   @JoinColumn({ name: 'providerId' })

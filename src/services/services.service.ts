@@ -20,8 +20,32 @@ export class ServicesService {
   ) {}
 
   async findOneByOrFail(serviceData: Partial<Service>) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { allowedPaymentMethods, ...findCriteria } = serviceData;
+
     const service = await this.serviceRepository.findOne({
-      where: serviceData,
+      where: findCriteria,
+      relations: ['provider', 'enrollments'],
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    return service;
+  }
+
+  async findAllByProvider({ providerId }: { providerId: string }) {
+    if (!providerId) {
+      throw new BadRequestException('Provider Id is missing');
+    }
+
+    const service = await this.serviceRepository.find({
+      where: {
+        provider: {
+          id: providerId,
+        },
+      },
       relations: ['provider', 'enrollments'],
     });
 
@@ -51,6 +75,7 @@ export class ServicesService {
     service.name = createServiceDto.name;
     service.description = createServiceDto.description;
     service.defaultPrice = createServiceDto.defaultPrice;
+    service.address = createServiceDto.address;
 
     const created = await this.serviceRepository.save(service);
     return created;
@@ -81,6 +106,7 @@ export class ServicesService {
     service.description = updateServiceDto.description ?? service.description;
     service.defaultPrice =
       updateServiceDto.defaultPrice ?? service.defaultPrice;
+    service.address = updateServiceDto.address ?? service.address;
 
     const updated = await this.serviceRepository.save(service);
     return updated;
