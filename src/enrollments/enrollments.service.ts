@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChargeScheduleService } from 'src/charge-schedule/charge-schedule.service';
 import { ClientService } from 'src/client/client.service';
+import { ServiceScheduleService } from 'src/service-schedule/service-schedule.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
 import { Between, MoreThanOrEqual, Repository } from 'typeorm';
@@ -24,6 +25,7 @@ export class EnrollmentsService {
     private readonly servicesService: ServicesService,
     private readonly clientService: ClientService,
     private readonly chargeScheduleService: ChargeScheduleService,
+    private readonly serviceScheduleService: ServiceScheduleService,
   ) {}
 
   async findOneByOrFail(enrollmentsData: Partial<Enrollments>) {
@@ -33,6 +35,7 @@ export class EnrollmentsService {
         'service',
         'service.provider',
         'chargeSchedule',
+        'serviceSchedule',
         'chargeExceptions',
       ],
     });
@@ -60,30 +63,40 @@ export class EnrollmentsService {
       id: createEnrollmentDto.clientId,
     });
 
-    if (!client) {
-      throw new BadRequestException('Client not exists');
-    }
+    const {
+      chargeSchedule: chargeScheduleDto,
+      serviceSchedule: serviceScheduleDto,
+      ...enrollmentData
+    } = createEnrollmentDto;
 
-    let enrollment: Enrollments = new Enrollments();
-
-    enrollment.service = service;
-    enrollment.client = client;
-
-    enrollment = await this.enrollmentsRepository.save({
-      ...enrollment,
-      ...createEnrollmentDto,
+    let enrollment: Enrollments = this.enrollmentsRepository.create({
+      ...enrollmentData,
+      service,
+      client,
     });
-
-    const chargeSchedule = await this.chargeScheduleService.create({
-      createChargeScheduleDto: createEnrollmentDto.chargeSchedule,
-      enrollmentId: enrollment.id,
-    });
-
-    enrollment.chargeSchedule = chargeSchedule;
-
     enrollment = await this.enrollmentsRepository.save(enrollment);
 
-    return enrollment;
+    try {
+      const chargeSchedule = await this.chargeScheduleService.create({
+        createChargeScheduleDto: chargeScheduleDto,
+        enrollmentId: enrollment.id,
+      });
+
+      const serviceSchedule = await this.serviceScheduleService.create(
+        serviceScheduleDto,
+        enrollment,
+      );
+
+      enrollment.chargeSchedule = chargeSchedule;
+      enrollment.serviceSchedule = serviceSchedule;
+
+      return this.findOneByOrFail({ id: enrollment.id });
+    } catch (error) {
+      await this.enrollmentsRepository.remove(enrollment);
+      throw new BadRequestException(
+        `Erro ao criar agendamentos: ${error.message}`,
+      );
+    }
   }
 
   async findAll() {
@@ -99,13 +112,17 @@ export class EnrollmentsService {
         status: ENROLLMENT_STATUS.ACTIVE,
         startDate: MoreThanOrEqual(today),
       },
-      relations: ['chargeSchedule', 'chargeExceptions', 'charges'],
+      relations: [
+        'chargeSchedule',
+        'serviceSchedule',
+        'chargeExceptions',
+        'charges',
+      ],
     });
   }
 
   async findOne({ id }: { id: string }) {
     const enrollments = await this.findOneByOrFail({ id });
-
     return enrollments;
   }
 
@@ -123,13 +140,28 @@ export class EnrollmentsService {
       userId,
     });
 
-    enrollments.price = updateEnrollmentDto.price ?? enrollments.price;
-    enrollments.startDate =
-      updateEnrollmentDto.startDate ?? enrollments.startDate;
-    enrollments.endDate = updateEnrollmentDto.endDate ?? enrollments.endDate;
+    const {
+      chargeSchedule: chargeScheduleDto,
+      serviceSchedule: serviceScheduleDto,
+      ...enrollmentData
+    } = updateEnrollmentDto;
+
+    this.enrollmentsRepository.merge(enrollments, enrollmentData);
+
+    if (chargeScheduleDto && enrollments.chargeSchedule) {
+      await this.chargeScheduleService.update({
+        chargeScheduleId: enrollments.chargeSchedule.id,
+        updateChargeScheduleDto: chargeScheduleDto,
+      });
+    }
+
+    if (serviceScheduleDto && enrollments.serviceSchedule) {
+      Object.assign(enrollments.serviceSchedule, serviceScheduleDto);
+      await this.serviceScheduleService.save(enrollments.serviceSchedule);
+    }
 
     const updated = await this.enrollmentsRepository.save(enrollments);
-    return updated;
+    return this.findOneByOrFail({ id: updated.id });
   }
 
   async remove({
@@ -163,13 +195,9 @@ export class EnrollmentsService {
 
     const enrollments = await this.findOneByOrFail({ id: enrollmentsId });
 
-    if (!enrollments) {
-      throw new NotFoundException('Enrollments not exists');
-    }
-
     if (enrollments.service.provider.id !== user.providerProfile.id) {
       throw new UnauthorizedException(
-        'User does not have permission to update this enrollments',
+        'User does not have permission to access this enrollment',
       );
     }
 
@@ -211,7 +239,7 @@ export class EnrollmentsService {
           },
         },
       },
-      relations: ['service', 'client', 'client.user'],
+      relations: ['service', 'client', 'client.user', 'serviceSchedule'],
     });
 
     return enrollments;

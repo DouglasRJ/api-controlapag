@@ -1,6 +1,7 @@
 import { ChargeExceptionResponseDto } from 'src/charge-exception/dto/charge-exception-response.dto';
 import { ChargeScheduleResponseDto } from 'src/charge-schedule/dto/charge-schedule-response.dto';
 import { Client } from 'src/client/entities/client.entity';
+import { ServiceScheduleResponseDto } from 'src/service-schedule/dto/service-schedule-response.dto';
 import { Service } from 'src/services/entities/service.entity';
 import { Enrollments } from '../entities/enrollment.entity';
 import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
@@ -16,6 +17,7 @@ export class EnrollmentsResponseDto {
 
   readonly chargeSchedule?: ChargeScheduleResponseDto;
   readonly chargeExceptions?: ChargeExceptionResponseDto[];
+  readonly serviceSchedule?: ServiceScheduleResponseDto;
 
   readonly client: Client;
   readonly service: Service;
@@ -40,6 +42,12 @@ export class EnrollmentsResponseDto {
     if (enrollment.chargeExceptions) {
       this.chargeExceptions = enrollment.chargeExceptions.map(
         ce => new ChargeExceptionResponseDto(ce),
+      );
+    }
+
+    if (enrollment.serviceSchedule) {
+      this.serviceSchedule = new ServiceScheduleResponseDto(
+        enrollment.serviceSchedule,
       );
     }
   }

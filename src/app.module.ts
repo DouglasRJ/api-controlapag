@@ -18,6 +18,7 @@ import { ServicesModule } from './services/services.module';
 import { UserModule } from './user/user.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ServiceScheduleModule } from './service-schedule/service-schedule.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PaymentModule,
     WebhookModule,
     DashboardModule,
+    ServiceScheduleModule,
   ],
   controllers: [AppController],
   providers: [
