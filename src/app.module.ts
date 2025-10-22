@@ -11,14 +11,14 @@ import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 import { ChargeModule } from './charge/charge.module';
 import { ClientModule } from './client/client.module';
 import { CronModule } from './cron/cron.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { PaymentModule } from './payment/payment.module';
 import { ProviderModule } from './provider/provider.module';
+import { ServiceScheduleModule } from './service-schedule/service-schedule.module';
 import { ServicesModule } from './services/services.module';
 import { UserModule } from './user/user.module';
 import { WebhookModule } from './webhook/webhook.module';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { ServiceScheduleModule } from './service-schedule/service-schedule.module';
 
 @Module({
   imports: [
