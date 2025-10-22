@@ -42,6 +42,9 @@ export class Service {
   @Column({ nullable: true })
   address?: string;
 
+  @Column({ default: true })
+  isRecurrent: boolean;
+
   @Column({
     type: 'enum',
     enum: PAYMENT_METHOD,

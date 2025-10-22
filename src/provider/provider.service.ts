@@ -182,8 +182,15 @@ export class ProviderService {
 
     return accountLink;
   }
-
-  async getServices({ userId }: { userId: string }) {
+  async getServices({
+    userId,
+    query,
+    isActive,
+  }: {
+    userId: string;
+    query?: string;
+    isActive?: boolean;
+  }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
     if (!user.providerProfile) {
       throw new BadRequestException('User does not have a provider profile.');
@@ -193,6 +200,8 @@ export class ProviderService {
 
     const services = await this.servicesService.findAllByProvider({
       providerId: provider.id,
+      query,
+      isActive,
     });
 
     return services;

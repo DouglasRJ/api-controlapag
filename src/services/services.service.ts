@@ -25,7 +25,12 @@ export class ServicesService {
 
     const service = await this.serviceRepository.findOne({
       where: findCriteria,
-      relations: ['provider', 'enrollments'],
+      relations: [
+        'provider',
+        'enrollments',
+        'enrollments.client',
+        'enrollments.client.user',
+      ],
     });
 
     if (!service) {
@@ -35,25 +40,41 @@ export class ServicesService {
     return service;
   }
 
-  async findAllByProvider({ providerId }: { providerId: string }) {
+  async findAllByProvider({
+    providerId,
+    query,
+    isActive,
+  }: {
+    providerId: string;
+    query?: string;
+    isActive?: boolean;
+  }) {
     if (!providerId) {
       throw new BadRequestException('Provider Id is missing');
     }
 
-    const service = await this.serviceRepository.find({
-      where: {
-        provider: {
-          id: providerId,
-        },
-      },
-      relations: ['provider', 'enrollments'],
-    });
+    const qb = this.serviceRepository.createQueryBuilder('service');
+    qb.where('service.providerId = :providerId', { providerId });
 
-    if (!service) {
-      throw new NotFoundException('Service not found');
+    if (isActive !== undefined) {
+      qb.andWhere('service.isActive = :isActive', { isActive });
     }
 
-    return service;
+    if (query) {
+      const searchPattern = `%${query}%`;
+      qb.andWhere(
+        '(service.name ILIKE :searchPattern OR service.description ILIKE :searchPattern)',
+        { searchPattern },
+      );
+    }
+
+    qb.leftJoinAndSelect('service.provider', 'provider');
+    qb.leftJoinAndSelect('service.enrollments', 'enrollments');
+    qb.leftJoinAndSelect('enrollments.client', 'client');
+
+    const services = await qb.getMany();
+
+    return services;
   }
 
   async create({
@@ -106,7 +127,7 @@ export class ServicesService {
     service.description = updateServiceDto.description ?? service.description;
     service.defaultPrice =
       updateServiceDto.defaultPrice ?? service.defaultPrice;
-    service.address = updateServiceDto.address ?? service.address;
+    service.address = updateServiceDto.address;
 
     const updated = await this.serviceRepository.save(service);
     return updated;
@@ -144,5 +165,26 @@ export class ServicesService {
     }
 
     return service;
+  }
+
+  async searchServices(query: string): Promise<Service[]> {
+    if (!query) {
+      return this.serviceRepository.find({
+        where: { isActive: true },
+        relations: ['provider'],
+      });
+    }
+
+    const searchString = `%${query}%`;
+
+    return this.serviceRepository
+      .createQueryBuilder('service')
+      .where('service.isActive = :isActive', { isActive: true })
+      .andWhere(
+        '(service.name ILIKE :search OR service.description ILIKE :search)',
+        { search: searchString },
+      )
+      .leftJoinAndSelect('service.provider', 'provider')
+      .getMany();
   }
 }

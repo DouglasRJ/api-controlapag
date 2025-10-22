@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -68,5 +69,13 @@ export class ServicesController {
       serviceId: id,
     });
     return new ServiceResponseDto(service);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('search')
+  async search(@Query('q') query: string) {
+    console.log('query', query);
+    const services = await this.servicesService.searchServices(query);
+    return services.map(p => new ServiceResponseDto(p));
   }
 }

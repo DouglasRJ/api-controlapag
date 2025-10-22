@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -70,9 +71,22 @@ export class ProviderController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('services')
-  async getServices(@Req() req: AuthenticatedRequest) {
+  async getServices(
+    @Req() req: AuthenticatedRequest,
+    @Query('q') query?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    let isActiveFilter: boolean | undefined;
+    if (isActive === 'true') {
+      isActiveFilter = true;
+    } else if (isActive === 'false') {
+      isActiveFilter = false;
+    }
+
     const services = await this.providerService.getServices({
       userId: req.user.id,
+      query,
+      isActive: isActiveFilter,
     });
     return services.map(s => new ServiceResponseDto(s));
   }
