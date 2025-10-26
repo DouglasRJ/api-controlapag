@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -101,6 +102,19 @@ export class PaymentService {
       id: enrollment.service.provider.id,
     });
 
+    if (
+      !provider.providerPaymentId ||
+      provider.providerPaymentId.trim() === ''
+    ) {
+      this.logger.error(
+        `Provider (ID: ${provider.id}) não possui um providerPaymentId (Stripe Account ID) configurado para receber pagamentos.`,
+      );
+
+      throw new BadRequestException(
+        'O prestador deste serviço não está configurado para receber pagamentos no momento.',
+      );
+    }
+
     const applicationFee = Math.round(
       charge.amount * 100 * this.PLATFORM_FEE_PERCENTAGE,
     );
@@ -118,7 +132,8 @@ export class PaymentService {
           quantity: 1,
         },
       ],
-      onBehalfOfAccountId: provider.providerPaymentId!,
+
+      onBehalfOfAccountId: provider.providerPaymentId,
       applicationFeeAmount: applicationFee,
     });
   }

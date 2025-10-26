@@ -1,4 +1,6 @@
 import {
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -18,6 +20,7 @@ export class ChargeService {
   constructor(
     @InjectRepository(Charge)
     private readonly chargeRepository: Repository<Charge>,
+    @Inject(forwardRef(() => EnrollmentsService))
     private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
@@ -161,5 +164,23 @@ export class ChargeService {
     });
 
     return this.chargeRepository.save(newCharge);
+  }
+
+  async deletePendingChargesForEnrollment(
+    enrollmentId: string,
+    fromDate?: Date,
+  ): Promise<void> {
+    const queryBuilder = this.chargeRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Charge)
+      .where('enrollmentId = :enrollmentId', { enrollmentId })
+      .andWhere('status = :status', { status: CHARGE_STATUS.PENDING });
+
+    if (fromDate) {
+      queryBuilder.andWhere('dueDate >= :fromDate', { fromDate });
+    }
+
+    await queryBuilder.execute();
   }
 }
