@@ -4,7 +4,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -15,10 +15,11 @@ export class ServiceSchedule {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => Enrollments, enrollment => enrollment.serviceSchedule, {
+  @ManyToOne(() => Enrollments, enrollment => enrollment.serviceSchedules, {
     onDelete: 'CASCADE',
+    nullable: false,
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'enrollmentId' })
   enrollment: Enrollments;
 
   @Column({ type: 'enum', enum: SERVICE_FREQUENCY })

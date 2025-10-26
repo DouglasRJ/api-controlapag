@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -29,4 +30,8 @@ export class CreateServiceDto {
   @IsEnum(PAYMENT_METHOD, { each: true })
   @IsOptional()
   allowedPaymentMethods?: PAYMENT_METHOD[];
+
+  @IsBoolean()
+  @IsOptional()
+  isRecurrent: boolean;
 }

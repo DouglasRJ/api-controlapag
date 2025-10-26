@@ -11,7 +11,7 @@ import { JwtPayload } from 'src/auth/types/jwt-payload.type';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, Like, Repository } from 'typeorm';
 import { CreateClientByProviderDto } from './dto/create-client-by-provider.dto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -27,7 +27,10 @@ export class ClientService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async findOneByOrFail(clientData: Partial<Client>, getEnrollments = false) {
+  async findOneByOrFail(
+    clientData: FindOptionsWhere<Client>,
+    getEnrollments = false,
+  ) {
     const user = await this.clientRepository.findOne({
       where: clientData,
       relations: ['user', ...(getEnrollments ? ['enrollments'] : [])],
@@ -59,8 +62,15 @@ export class ClientService {
     return created;
   }
 
-  findAll() {
-    return this.clientRepository.find();
+  findAll(search: string) {
+    const searchTerm = search || '';
+    return this.clientRepository.find({
+      where: {
+        user: { username: Like(`%${searchTerm}%`) },
+      },
+      relations: ['user'],
+      take: 10,
+    });
   }
 
   async findOne({ userId }: { userId: string }) {

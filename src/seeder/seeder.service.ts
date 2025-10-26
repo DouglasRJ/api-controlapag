@@ -172,6 +172,7 @@ export class SeederService {
               ['PIX', 'CREDIT_CARD', 'CASH', 'BANK_SLIP'],
               { min: 1, max: 4 },
             ) as any,
+            isRecurrent: faker.datatype.boolean(),
           };
           const service = await this.servicesService.create({
             userId: providerUser.id,
@@ -242,8 +243,8 @@ export class SeederService {
                 ? service.defaultPrice *
                   faker.number.float({ min: 0.8, max: 1.1 })
                 : faker.number.float({ min: 50, max: 800 }),
-              startDate: startDate,
-              endDate: endDate,
+              startDate: 'startDate',
+              endDate: 'endDate',
               serviceId: service.id,
               clientId: clientProfile.id,
               chargeSchedule: {
@@ -260,7 +261,7 @@ export class SeederService {
                   ? faker.date.soon({ days: 30, refDate: startDate })
                   : undefined,
               },
-              serviceSchedule: {
+              serviceSchedules: {
                 frequency: serviceFrequency,
                 daysOfWeek:
                   serviceFrequency === SERVICE_FREQUENCY.WEEKLY

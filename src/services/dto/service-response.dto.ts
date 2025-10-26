@@ -9,6 +9,7 @@ export class ServiceResponseDto {
   readonly defaultPrice?: number;
   readonly isActive: boolean;
   readonly address?: string;
+  readonly isRecurrent: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly allowedPaymentMethods: PAYMENT_METHOD[];
@@ -27,6 +28,7 @@ export class ServiceResponseDto {
     this.allowedPaymentMethods = service.allowedPaymentMethods;
     this.createdAt = service.createdAt;
     this.updatedAt = service.updatedAt;
+    this.isRecurrent = service.isRecurrent;
 
     if (service.enrollments) {
       this.enrollments = service.enrollments.map(

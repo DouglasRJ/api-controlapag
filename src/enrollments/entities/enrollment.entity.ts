@@ -67,12 +67,12 @@ export class Enrollments {
   @OneToMany(() => Charge, charge => charge.enrollment)
   charges: Charge[];
 
-  @OneToOne(
+  @OneToMany(
     () => ServiceSchedule,
-    serviceSchedule => serviceSchedule.enrollment,
+    serviceSchedules => serviceSchedules.enrollment,
     {
       cascade: true,
     },
   )
-  serviceSchedule: ServiceSchedule;
+  serviceSchedules: ServiceSchedule[];
 }

@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   ValidateIf,
 } from 'class-validator';
 import { BILLING_MODEL } from '../enum/billing-model.enum';
@@ -23,6 +24,7 @@ export class CreateChargeScheduleDto {
   @IsNotEmpty()
   chargeDay: number;
 
+  @IsOptional()
   @IsDateString()
   dueDate?: Date;
 }

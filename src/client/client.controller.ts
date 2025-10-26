@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -23,8 +24,8 @@ export class ClientController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get()
-  async findAll() {
-    const clients = await this.clientService.findAll();
+  async findAll(@Query('search') search: string) {
+    const clients = await this.clientService.findAll(search);
     return clients.map(p => new ClientResponseDto(p));
   }
 

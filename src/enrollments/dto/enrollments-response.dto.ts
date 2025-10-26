@@ -17,7 +17,7 @@ export class EnrollmentsResponseDto {
 
   readonly chargeSchedule?: ChargeScheduleResponseDto;
   readonly chargeExceptions?: ChargeExceptionResponseDto[];
-  readonly serviceSchedule?: ServiceScheduleResponseDto;
+  readonly serviceSchedules?: ServiceScheduleResponseDto[];
 
   readonly client: Client;
   readonly service: Service;
@@ -45,9 +45,9 @@ export class EnrollmentsResponseDto {
       );
     }
 
-    if (enrollment.serviceSchedule) {
-      this.serviceSchedule = new ServiceScheduleResponseDto(
-        enrollment.serviceSchedule,
+    if (enrollment.serviceSchedules) {
+      this.serviceSchedules = enrollment.serviceSchedules.map(
+        s => new ServiceScheduleResponseDto(s),
       );
     }
   }

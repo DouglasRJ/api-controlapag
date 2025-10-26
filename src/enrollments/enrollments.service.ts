@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -7,10 +9,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChargeScheduleService } from 'src/charge-schedule/charge-schedule.service';
 import { ClientService } from 'src/client/client.service';
+import { CreateServiceScheduleSimpleDto } from 'src/service-schedule/dto/create-service-schedule.dto';
+import { ServiceSchedule } from 'src/service-schedule/entities/service-schedule.entity';
+import { SERVICE_FREQUENCY } from 'src/service-schedule/enum/service-frequency.enum';
 import { ServiceScheduleService } from 'src/service-schedule/service-schedule.service';
 import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
-import { Between, MoreThanOrEqual, Repository } from 'typeorm';
+import { Between, FindOptionsWhere, Repository } from 'typeorm';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { Enrollments } from './entities/enrollment.entity';
@@ -21,23 +26,31 @@ export class EnrollmentsService {
   constructor(
     @InjectRepository(Enrollments)
     private readonly enrollmentsRepository: Repository<Enrollments>,
+    @InjectRepository(ServiceSchedule)
+    private readonly serviceScheduleRepository: Repository<ServiceSchedule>,
     private readonly userService: UserService,
+    @Inject(forwardRef(() => ServicesService))
     private readonly servicesService: ServicesService,
     private readonly clientService: ClientService,
     private readonly chargeScheduleService: ChargeScheduleService,
     private readonly serviceScheduleService: ServiceScheduleService,
   ) {}
 
-  async findOneByOrFail(enrollmentsData: Partial<Enrollments>) {
+  async findOneByOrFail(
+    whereClause: FindOptionsWhere<Enrollments>,
+    relations: string[] = [
+      'service',
+      'service.provider',
+      'chargeSchedule',
+      'serviceSchedules',
+      'chargeExceptions',
+      'client',
+      'client.user',
+    ],
+  ): Promise<Enrollments> {
     const enrollments = await this.enrollmentsRepository.findOne({
-      where: enrollmentsData,
-      relations: [
-        'service',
-        'service.provider',
-        'chargeSchedule',
-        'serviceSchedule',
-        'chargeExceptions',
-      ],
+      where: whereClause,
+      relations: relations,
     });
 
     if (!enrollments) {
@@ -65,7 +78,7 @@ export class EnrollmentsService {
 
     const {
       chargeSchedule: chargeScheduleDto,
-      serviceSchedule: serviceScheduleDto,
+      serviceSchedules: serviceScheduleSimpleDto,
       ...enrollmentData
     } = createEnrollmentDto;
 
@@ -76,31 +89,195 @@ export class EnrollmentsService {
     });
     enrollment = await this.enrollmentsRepository.save(enrollment);
 
-    try {
-      const chargeSchedule = await this.chargeScheduleService.create({
-        createChargeScheduleDto: chargeScheduleDto,
-        enrollmentId: enrollment.id,
-      });
+    let createdChargeScheduleId: string | null = null;
+    let createdServiceSchedules: ServiceSchedule[] = [];
 
-      const serviceSchedule = await this.serviceScheduleService.create(
-        serviceScheduleDto,
-        enrollment,
+    try {
+      if (chargeScheduleDto) {
+        const chargeSchedule = await this.chargeScheduleService.create({
+          createChargeScheduleDto: chargeScheduleDto,
+          enrollmentId: enrollment.id,
+        });
+        createdChargeScheduleId = chargeSchedule.id;
+        enrollment.chargeSchedule = chargeSchedule;
+      }
+
+      if (serviceScheduleSimpleDto) {
+        createdServiceSchedules =
+          await this._createServiceSchedulesFromSimpleDto(
+            enrollment,
+            serviceScheduleSimpleDto,
+          );
+        enrollment.serviceSchedules = createdServiceSchedules;
+      }
+
+      enrollment = await this.enrollmentsRepository.save(enrollment);
+
+      return this.findOneByIdWithRelations(enrollment.id);
+    } catch (error: unknown) {
+      console.error(
+        'Erro ao criar schedules, iniciando rollback para enrollment ID:',
+        enrollment.id,
+        error,
       );
 
-      enrollment.chargeSchedule = chargeSchedule;
-      enrollment.serviceSchedule = serviceSchedule;
+      if (createdChargeScheduleId) {
+        try {
+          console.log(
+            `Rollback: Deletando ChargeSchedule ID: ${createdChargeScheduleId}`,
+          );
+          await this.chargeScheduleService.remove({
+            chargeScheduleId: createdChargeScheduleId,
+          });
+        } catch (cleanupError) {
+          console.error(
+            'Erro durante cleanup do ChargeSchedule:',
+            cleanupError,
+          );
+        }
+      }
 
-      return this.findOneByOrFail({ id: enrollment.id });
-    } catch (error) {
-      await this.enrollmentsRepository.remove(enrollment);
+      if (createdServiceSchedules.length > 0) {
+        try {
+          const idsToDelete = createdServiceSchedules.map(s => s.id);
+          console.log(
+            `Rollback: Deletando ServiceSchedules IDs: ${idsToDelete.join(', ')}`,
+          );
+          await this.serviceScheduleRepository.delete(idsToDelete);
+        } catch (cleanupError) {
+          console.error(
+            'Erro durante cleanup dos ServiceSchedules:',
+            cleanupError,
+          );
+        }
+      }
+
+      try {
+        console.log(`Rollback: Deletando Enrollment ID: ${enrollment.id}`);
+        await this.enrollmentsRepository.remove(enrollment);
+      } catch (removeError) {
+        console.error(
+          `ERRO CRÍTICO: Falha ao remover Enrollment ${enrollment.id} durante rollback:`,
+          removeError,
+        );
+      }
+
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      // Re-throw original error if it's BadRequest, otherwise wrap it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException(
-        `Erro ao criar agendamentos: ${error.message}`,
+        `Erro ao criar agendamentos associados: ${message}`,
       );
     }
   }
 
+  private async _createServiceSchedulesFromSimpleDto(
+    enrollment: Enrollments,
+    dto: CreateServiceScheduleSimpleDto,
+  ): Promise<ServiceSchedule[]> {
+    const schedulesToCreate: Partial<ServiceSchedule>[] = [];
+
+    // Add specific check for WEEKLY missing days
+    if (
+      dto.frequency === SERVICE_FREQUENCY.WEEKLY &&
+      (!dto.daysOfWeek || dto.daysOfWeek.length === 0)
+    ) {
+      throw new BadRequestException(
+        'Para frequência Semanal, é necessário selecionar pelo menos um dia da semana.',
+      );
+    }
+
+    if (
+      dto.frequency === SERVICE_FREQUENCY.WEEKLY &&
+      dto.daysOfWeek && // Checked above, but keep for safety
+      dto.daysOfWeek.length > 0
+    ) {
+      dto.daysOfWeek.forEach(day => {
+        schedulesToCreate.push({
+          enrollment: enrollment,
+          frequency: dto.frequency,
+          daysOfWeek: [day], // Backend expects number[], frontend sends number[] now
+          startTime: dto.startTime,
+          endTime: dto.endTime,
+          dayOfMonth: undefined,
+        });
+      });
+    } else if (dto.frequency === SERVICE_FREQUENCY.MONTHLY && dto.dayOfMonth) {
+      schedulesToCreate.push({
+        enrollment: enrollment,
+        frequency: dto.frequency,
+        dayOfMonth: dto.dayOfMonth,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        daysOfWeek: undefined,
+      });
+    } else if (dto.frequency === SERVICE_FREQUENCY.DAILY) {
+      schedulesToCreate.push({
+        enrollment: enrollment,
+        frequency: dto.frequency,
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+        daysOfWeek: undefined,
+        dayOfMonth: undefined,
+      });
+    } else if (dto.frequency === SERVICE_FREQUENCY.CUSTOM_DAYS) {
+      console.warn(
+        `Lógica para ${SERVICE_FREQUENCY.CUSTOM_DAYS} não implementada.`,
+      );
+    } else if (dto.frequency) {
+      // This will now likely catch MONTHLY without dayOfMonth
+      throw new BadRequestException(
+        `Dados insuficientes ou inválidos para a frequência ${dto.frequency}`,
+      );
+    }
+
+    if (schedulesToCreate.length === 0 && dto.frequency) {
+      console.warn(`Nenhum ServiceSchedule gerado para o DTO:`, dto);
+      return [];
+    } else if (schedulesToCreate.length === 0) {
+      return [];
+    }
+
+    try {
+      const createdSchedules =
+        await this.serviceScheduleRepository.save(schedulesToCreate);
+      return createdSchedules;
+    } catch (error: unknown) {
+      console.error('Erro ao salvar ServiceSchedules:', error);
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(
+        `Não foi possível salvar os agendamentos de serviço: ${message}`,
+      );
+    }
+  }
+
+  async findOneByIdWithRelations(id: string): Promise<Enrollments> {
+    const enrollment = await this.enrollmentsRepository.findOne({
+      where: { id },
+      relations: [
+        'service',
+        'service.provider',
+        'client',
+        'client.user',
+        'chargeSchedule',
+        'serviceSchedules',
+        'chargeExceptions',
+      ],
+    });
+    if (!enrollment) {
+      throw new NotFoundException(`Enrollment com ID ${id} não encontrado.`);
+    }
+    return enrollment;
+  }
+
   async findAll() {
-    return await this.enrollmentsRepository.find();
+    return await this.enrollmentsRepository.find({
+      relations: ['serviceSchedules'],
+    });
   }
 
   async findAllNeedsCharge() {
@@ -110,19 +287,22 @@ export class EnrollmentsService {
     return await this.enrollmentsRepository.find({
       where: {
         status: ENROLLMENT_STATUS.ACTIVE,
-        startDate: MoreThanOrEqual(today),
       },
       relations: [
         'chargeSchedule',
-        'serviceSchedule',
+        'serviceSchedules',
         'chargeExceptions',
         'charges',
+        'client',
+        'client.user',
+        'service',
+        'service.provider',
       ],
     });
   }
 
   async findOne({ id }: { id: string }) {
-    const enrollments = await this.findOneByOrFail({ id });
+    const enrollments = await this.findOneByIdWithRelations(id);
     return enrollments;
   }
 
@@ -135,33 +315,49 @@ export class EnrollmentsService {
     userId: string;
     updateEnrollmentDto: UpdateEnrollmentDto;
   }) {
-    const enrollments = await this.checkEnrollmentOwnership({
+    const enrollment = await this.checkEnrollmentOwnership({
       enrollmentsId,
       userId,
     });
 
     const {
       chargeSchedule: chargeScheduleDto,
-      serviceSchedule: serviceScheduleDto,
+      serviceSchedules: serviceScheduleSimpleDto, // Expect plural name from Update DTO
       ...enrollmentData
     } = updateEnrollmentDto;
 
-    this.enrollmentsRepository.merge(enrollments, enrollmentData);
+    try {
+      this.enrollmentsRepository.merge(enrollment, enrollmentData);
+      const updatedEnrollment =
+        await this.enrollmentsRepository.save(enrollment);
 
-    if (chargeScheduleDto && enrollments.chargeSchedule) {
-      await this.chargeScheduleService.update({
-        chargeScheduleId: enrollments.chargeSchedule.id,
-        updateChargeScheduleDto: chargeScheduleDto,
-      });
+      if (chargeScheduleDto && updatedEnrollment.chargeSchedule) {
+        await this.chargeScheduleService.update({
+          chargeScheduleId: updatedEnrollment.chargeSchedule.id,
+          updateChargeScheduleDto: chargeScheduleDto,
+        });
+      }
+
+      if (serviceScheduleSimpleDto) {
+        await this.serviceScheduleRepository.delete({
+          enrollment: { id: enrollmentsId },
+        });
+
+        updatedEnrollment.serviceSchedules =
+          await this._createServiceSchedulesFromSimpleDto(
+            updatedEnrollment,
+            serviceScheduleSimpleDto,
+          );
+        await this.enrollmentsRepository.save(updatedEnrollment);
+      }
+
+      return this.findOneByIdWithRelations(enrollmentsId);
+    } catch (error: unknown) {
+      console.error('Erro ao atualizar enrollment:', error);
+      const message =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      throw new BadRequestException(`Erro ao atualizar contrato: ${message}`);
     }
-
-    if (serviceScheduleDto && enrollments.serviceSchedule) {
-      Object.assign(enrollments.serviceSchedule, serviceScheduleDto);
-      await this.serviceScheduleService.save(enrollments.serviceSchedule);
-    }
-
-    const updated = await this.enrollmentsRepository.save(enrollments);
-    return this.findOneByOrFail({ id: updated.id });
   }
 
   async remove({
@@ -171,13 +367,12 @@ export class EnrollmentsService {
     userId: string;
     enrollmentsId: string;
   }) {
-    const enrollments = await this.checkEnrollmentOwnership({
+    const enrollment = await this.checkEnrollmentOwnership({
       enrollmentsId,
       userId,
     });
-
-    await this.enrollmentsRepository.remove(enrollments);
-    return enrollments;
+    await this.enrollmentsRepository.remove(enrollment);
+    return enrollment;
   }
 
   async checkEnrollmentOwnership({
@@ -190,18 +385,22 @@ export class EnrollmentsService {
     const user = await this.userService.findOneByOrFail({ id: userId });
 
     if (!user.providerProfile) {
-      throw new BadRequestException('User not have enrollments');
+      throw new BadRequestException('User is not a provider');
     }
 
-    const enrollments = await this.findOneByOrFail({ id: enrollmentsId });
+    const enrollment = await this.findOneByOrFail({ id: enrollmentsId }, [
+      'service',
+      'service.provider',
+      'serviceSchedules',
+    ]);
 
-    if (enrollments.service.provider.id !== user.providerProfile.id) {
+    if (enrollment.service.provider.id !== user.providerProfile.id) {
       throw new UnauthorizedException(
         'User does not have permission to access this enrollment',
       );
     }
 
-    return enrollments;
+    return enrollment;
   }
 
   async countActiveEnrollmentsForProvider(providerId: string): Promise<number> {
@@ -239,7 +438,16 @@ export class EnrollmentsService {
           },
         },
       },
-      relations: ['service', 'client', 'client.user', 'serviceSchedule'],
+      relations: [
+        'service',
+        'client',
+        'client.user',
+        'serviceSchedules',
+        'chargeSchedule',
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
     return enrollments;

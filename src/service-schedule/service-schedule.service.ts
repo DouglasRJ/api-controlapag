@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollments } from 'src/enrollments/entities/enrollment.entity';
-import { FindOptionsWhere, Repository } from 'typeorm'; // Importar FindOptionsWhere
-import { CreateServiceScheduleDto } from './dto/create-service-schedule.dto';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { CreateServiceScheduleSimpleDto } from './dto/create-service-schedule.dto';
 import { ServiceSchedule } from './entities/service-schedule.entity';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class ServiceScheduleService {
   }
 
   async create(
-    createDto: CreateServiceScheduleDto,
+    createDto: CreateServiceScheduleSimpleDto,
     enrollment: Enrollments,
   ): Promise<ServiceSchedule> {
     const newSchedule = this.serviceScheduleRepository.create({
