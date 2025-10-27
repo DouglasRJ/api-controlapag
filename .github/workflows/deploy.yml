@@ -54,6 +54,15 @@ jobs:
             -backend-config="region=${{ secrets.AWS_REGION }}"
         working-directory: ./iac
 
+      - name: Import existing secrets into state
+        id: import-secrets
+        continue-on-error: true
+        run: |
+          terraform import aws_secretsmanager_secret.db_password devcontrolapag-api-db-password
+          terraform import aws_secretsmanager_secret.jwt_secret devcontrolapag-api-jwt-secret
+          terraform import aws_secretsmanager_secret.internal_api_token devcontrolapag-api-internal-api-token
+        working-directory: ./iac
+
       - name: Terraform Plan
         if: github.event.inputs.action == 'plan'
         run: terraform plan
