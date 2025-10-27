@@ -20,11 +20,7 @@ resource "aws_iam_policy" "ecs_secrets_policy" {
   })
 }
 
-data "aws_iam_role" "ecs_execution_role" {
-  name = "devcontrolapag-api-ecs-execution-role"
-}
-
 resource "aws_iam_role_policy_attachment" "ecs_secrets_attachment" {
-  role       = data.aws_iam_role.ecs_execution_role.name
+  role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = aws_iam_policy.ecs_secrets_policy.arn
 }
