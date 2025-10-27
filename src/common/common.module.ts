@@ -1,10 +1,20 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { ChargeModule } from 'src/charge/charge.module';
+import { ProviderModule } from 'src/provider/provider.module';
+import { UserModule } from 'src/user/user.module';
+import { GatewayPaymentService } from './gatewayPayment/gateway-payment.service';
+import { StripeService } from './gatewayPayment/stripe.service';
 import { BcryptHashService } from './hash/bcrypt-hash.service';
 import { HashService } from './hash/hash.service';
 import { ManageFileService } from './manageFile/manageFile.service';
 import { S3Service } from './manageFile/s3-manageFile.service';
 
 @Module({
+  imports: [
+    forwardRef(() => UserModule),
+    forwardRef(() => ProviderModule),
+    forwardRef(() => ChargeModule),
+  ],
   providers: [
     {
       provide: HashService,
@@ -14,7 +24,11 @@ import { S3Service } from './manageFile/s3-manageFile.service';
       provide: ManageFileService,
       useClass: S3Service,
     },
+    {
+      provide: GatewayPaymentService,
+      useClass: StripeService,
+    },
   ],
-  exports: [HashService, ManageFileService],
+  exports: [HashService, ManageFileService, GatewayPaymentService],
 })
 export class CommonModule {}

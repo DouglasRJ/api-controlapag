@@ -1,7 +1,10 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChargeScheduleModule } from 'src/charge-schedule/charge-schedule.module';
+import { ChargeModule } from 'src/charge/charge.module';
 import { ClientModule } from 'src/client/client.module';
+import { ServiceSchedule } from 'src/service-schedule/entities/service-schedule.entity';
+import { ServiceScheduleModule } from 'src/service-schedule/service-schedule.module';
 import { ServicesModule } from 'src/services/services.module';
 import { UserModule } from 'src/user/user.module';
 import { EnrollmentsController } from './enrollments.controller';
@@ -10,11 +13,13 @@ import { Enrollments } from './entities/enrollment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Enrollments]),
-    UserModule,
-    ServicesModule,
-    ClientModule,
-    ChargeScheduleModule,
+    TypeOrmModule.forFeature([Enrollments, ServiceSchedule]),
+    forwardRef(() => UserModule),
+    forwardRef(() => ServicesModule),
+    forwardRef(() => ClientModule),
+    forwardRef(() => ServiceScheduleModule),
+    forwardRef(() => ChargeScheduleModule),
+    forwardRef(() => ChargeModule),
   ],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],

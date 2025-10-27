@@ -1,5 +1,7 @@
 resource "aws_ecr_repository" "api" {
   name = "${var.project_name}/api"
+   force_delete         = true
+  image_tag_mutability = "MUTABLE" 
 }
 
 resource "aws_ecs_cluster" "main" {
@@ -88,20 +90,37 @@ resource "aws_ecs_task_definition" "api" {
     memory    = tonumber(var.ecs_memory)
     essential = true
     portMappings = [{
-      containerPort = 3000
+      containerPort = 3000 
       hostPort      = 3000
     }]
     secrets = [
       {
         name      = "DB_PASSWORD"
         valueFrom = aws_secretsmanager_secret.db_password.arn
+      },
+      {
+        name      = "JWT_SECRET"
+        valueFrom = aws_secretsmanager_secret.jwt_secret.arn
+      },
+      {
+        name      = "INTERNAL_API_TOKEN"
+        valueFrom = aws_secretsmanager_secret.internal_api_token.arn
       }
     ]
     environment = [
       { name = "DB_HOST", value = aws_db_instance.default.address },
       { name = "DB_PORT", value = tostring(aws_db_instance.default.port) },
       { name = "DB_USERNAME", value = aws_db_instance.default.username },
-      { name = "DB_DATABASE", value = var.project_name },
+      { name = "DB_DATABASE", value = local.db_name },
+      { name = "DB_TYPE", value = "postgres" },
+      { name = "DB_AUTO_LOAD_ENTITIES", value = "1" },
+      { name = "DB_SYNCHRONIZE", value = "false" }, # Geralmente false em produção
+      { name = "PORT", value = "3000" },
+      { name = "NODE_ENV", value = "production" },
+      { name = "JWT_EXPIRATION", value = var.jwt_expiration },
+      { name = "S3_BUCKET", value = var.s3_bucket },
+      { name = "S3_REGION", value = var.aws_region },
+      { name = "DISABLE_MANAGE_FILE", value = var.disable_manage_file }
     ]
     logConfiguration = {
       logDriver = "awslogs"

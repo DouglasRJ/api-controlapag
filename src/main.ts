@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -18,6 +20,10 @@ async function bootstrap() {
     app.use(helmet());
     app.enableCors({
       origin: 'https://controlapag.com.br',
+    });
+  } else {
+    app.enableCors({
+      origin: '*',
     });
   }
 

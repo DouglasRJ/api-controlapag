@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,12 +7,16 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { CreateServiceDto } from './dto/create-service.dto';
+import { GetOccurrencesQueryDto } from './dto/get-ocurrences-query.dto';
+import { ServiceOccurrenceDto } from './dto/service-ocurrence-dto';
 import { ServiceResponseDto } from './dto/service-response.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { ServicesService } from './services.service';
@@ -68,5 +73,41 @@ export class ServicesController {
       serviceId: id,
     });
     return new ServiceResponseDto(service);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('search')
+  async search(@Query('q') query: string) {
+    console.log('query', query);
+    const services = await this.servicesService.searchServices(query);
+    return services.map(p => new ServiceResponseDto(p));
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':serviceId/occurrences')
+  async findOccurrences(
+    @Req() req: AuthenticatedRequest,
+    @Param('serviceId') serviceId: string,
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    query: GetOccurrencesQueryDto,
+  ): Promise<ServiceOccurrenceDto[]> {
+    const user = req.user;
+
+    if (query.endDate < query.startDate) {
+      throw new BadRequestException('endDate cannot be before startDate');
+    }
+
+    return await this.servicesService.findOccurrencesForService(
+      user.id,
+      serviceId,
+      query.startDate,
+      query.endDate,
+    );
   }
 }

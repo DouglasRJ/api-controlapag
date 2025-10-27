@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CreateClientDto } from 'src/client/dto/create-client.dto';
 import { Client } from 'src/client/entities/client.entity';
+import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
 import { HashService } from 'src/common/hash/hash.service';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { Provider } from 'src/provider/entities/provider.entity';
@@ -15,6 +16,7 @@ import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
 import { DataSource, EntityManager } from 'typeorm';
 import { LoginDto } from './dto/login.dto';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
 import { JwtPayload } from './types/jwt-payload.type';
 
 @Injectable()
@@ -24,7 +26,26 @@ export class AuthService {
     private readonly hashService: HashService,
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
+    private readonly gatewayPaymentService: GatewayPaymentService,
   ) {}
+
+  async getFullUserProfile(user: User): Promise<User> {
+    if (user.role === USER_ROLE.PROVIDER) {
+      try {
+        const userWithProfile = await this.userService.findOneByOrFail({
+          id: user.id,
+        });
+        return userWithProfile;
+      } catch (error) {
+        console.error(
+          'Falha ao buscar perfil de provider para usuário:',
+          user.id,
+          error,
+        );
+      }
+    }
+    return user;
+  }
 
   async login({ loginDto }: { loginDto: LoginDto }) {
     const error = new UnauthorizedException('Email or Password incorrect');
@@ -50,6 +71,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(jwtPayload);
 
     return {
+      user,
       accessToken,
     };
   }
@@ -87,12 +109,18 @@ export class AuthService {
           transactionalEntityManager,
         });
 
+        const profilePayment = await this.gatewayPaymentService.createCustomer({
+          email: createUserDto.email,
+          name: createUserDto.title,
+        });
+
         const newProviderProfile = transactionalEntityManager.create(Provider, {
           title: createUserDto.title,
           bio: createUserDto.bio,
           businessPhone: createUserDto.businessPhone,
           address: createUserDto.address,
           user: newUser,
+          paymentCustomerId: profilePayment.id,
         });
         await transactionalEntityManager.save(newProviderProfile);
 
@@ -128,5 +156,27 @@ export class AuthService {
 
   async removeUser({ userId }: { userId: string }) {
     await this.userService.remove(userId);
+  }
+
+  async setInitialPassword(
+    setInitialPasswordDto: SetInitialPasswordDto,
+  ): Promise<User> {
+    try {
+      const payload: JwtPayload = await this.jwtService.verifyAsync(
+        setInitialPasswordDto.token,
+      );
+
+      const user = await this.userService.findOneByOrFail({ id: payload.sub });
+
+      const hashedPassword = await this.hashService.hash(
+        setInitialPasswordDto.newPassword,
+      );
+
+      user.password = hashedPassword;
+
+      return this.userService.save(user);
+    } catch (error) {
+      throw new UnauthorizedException(`Invalid or expired token: ${error}`);
+    }
   }
 }

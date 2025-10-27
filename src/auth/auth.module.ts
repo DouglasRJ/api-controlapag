@@ -15,6 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     ProviderModule,
     ClientModule,
     JwtModule.registerAsync({
+      global: true,
       useFactory: () => {
         const secret = process.env.JWT_SECRET;
 
@@ -31,5 +32,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

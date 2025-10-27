@@ -1,5 +1,6 @@
 import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
 import { Service } from '../entities/service.entity';
+import { PAYMENT_METHOD } from '../enum/payment-method.enum';
 
 export class ServiceResponseDto {
   readonly id: string;
@@ -7,8 +8,11 @@ export class ServiceResponseDto {
   readonly description: string;
   readonly defaultPrice?: number;
   readonly isActive: boolean;
+  readonly address?: string;
+  readonly isRecurrent: boolean;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  readonly allowedPaymentMethods: PAYMENT_METHOD[];
 
   readonly providerId?: string;
 
@@ -20,8 +24,11 @@ export class ServiceResponseDto {
     this.description = service.description;
     this.defaultPrice = service.defaultPrice;
     this.isActive = service.isActive;
+    this.address = service.address;
+    this.allowedPaymentMethods = service.allowedPaymentMethods;
     this.createdAt = service.createdAt;
     this.updatedAt = service.updatedAt;
+    this.isRecurrent = service.isRecurrent;
 
     if (service.enrollments) {
       this.enrollments = service.enrollments.map(

@@ -4,9 +4,15 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomBytes } from 'crypto';
+import { JwtPayload } from 'src/auth/types/jwt-payload.type';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
-import { Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, Like, Repository } from 'typeorm';
+import { CreateClientByProviderDto } from './dto/create-client-by-provider.dto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Client } from './entities/client.entity';
@@ -17,12 +23,22 @@ export class ClientService {
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
     private readonly userService: UserService,
+    private readonly dataSource: DataSource,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async findOneByOrFail(clientData: Partial<Client>, getEnrollments = false) {
+  async findOneByOrFail(
+    clientData: FindOptionsWhere<Client>,
+    getEnrollments = false,
+  ) {
     const user = await this.clientRepository.findOne({
       where: clientData,
-      relations: ['user', ...(getEnrollments ? ['enrollments'] : [])],
+      relations: [
+        'user',
+        ...(getEnrollments
+          ? ['enrollments', 'enrollments.service', 'enrollments.charges']
+          : []),
+      ],
     });
 
     if (!user) {
@@ -51,8 +67,15 @@ export class ClientService {
     return created;
   }
 
-  findAll() {
-    return this.clientRepository.find();
+  findAll(search: string) {
+    const searchTerm = search || '';
+    return this.clientRepository.find({
+      where: {
+        user: { username: Like(`%${searchTerm}%`) },
+      },
+      relations: ['user'],
+      take: 10,
+    });
   }
 
   async findOne({ userId }: { userId: string }) {
@@ -66,8 +89,6 @@ export class ClientService {
       { id: user.clientProfile.id },
       true,
     );
-
-    console.log('client', client);
 
     return client;
   }
@@ -112,5 +133,93 @@ export class ClientService {
     const client = await this.findOneByOrFail({ id: clientId });
 
     return client;
+  }
+
+  async countTotalClientsForProvider(providerId: string): Promise<number> {
+    return this.clientRepository
+      .createQueryBuilder('client')
+      .innerJoin('client.enrollments', 'enrollment')
+      .innerJoin('enrollment.service', 'service')
+      .where('service.providerId = :providerId', { providerId })
+      .getCount();
+  }
+
+  async countNewClientsForProviderInDateRange(
+    providerId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<number> {
+    return this.clientRepository
+      .createQueryBuilder('client')
+      .innerJoin('client.enrollments', 'enrollment')
+      .innerJoin('enrollment.service', 'service')
+      .where('service.providerId = :providerId', { providerId })
+      .andWhere('client.createdAt >= :startDate', { startDate })
+      .andWhere('client.createdAt <= :endDate', { endDate })
+      .getCount();
+  }
+
+  async createClientByProvider({
+    providerUserId,
+    createClientDto,
+  }: {
+    providerUserId: string;
+    createClientDto: CreateClientByProviderDto;
+  }) {
+    const providerUser = await this.userService.findOneByOrFail({
+      id: providerUserId,
+    });
+    if (!providerUser.providerProfile) {
+      throw new UnauthorizedException('Only providers can register clients.');
+    }
+
+    const tempPassword = randomBytes(16).toString('hex');
+
+    const newClientProfile = await this.dataSource.transaction(
+      async transactionalEntityManager => {
+        const userToCreate: CreateUserDto = {
+          username: createClientDto.username,
+          email: createClientDto.email,
+          password: tempPassword,
+          role: USER_ROLE.CLIENT,
+        };
+
+        const newUser = await this.userService.create(
+          userToCreate,
+          transactionalEntityManager,
+        );
+
+        const newClientProfile = transactionalEntityManager.create(Client, {
+          phone: createClientDto.phone,
+          address: createClientDto.address,
+          user: newUser,
+        });
+
+        return transactionalEntityManager.save(newClientProfile);
+      },
+    );
+
+    const jwtPayload: JwtPayload = {
+      sub: newClientProfile.user.id,
+      email: newClientProfile.user.email,
+    };
+
+    const passwordSetupToken = await this.jwtService.signAsync(jwtPayload, {
+      expiresIn: '24h',
+    });
+
+    return {
+      client: newClientProfile,
+      passwordSetupToken,
+    };
+  }
+
+  async findClientEnrollments({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    const client = await this.findOneByOrFail(
+      { id: user.clientProfile.id },
+      true,
+    );
+    return client.enrollments;
   }
 }

@@ -31,3 +31,12 @@ resource "aws_security_group_rule" "app_to_rds" {
   source_security_group_id = aws_security_group.ecs_service_sg.id
   security_group_id        = aws_security_group.rds_sg.id
 }
+
+resource "aws_security_group_rule" "lb_to_ecs" {
+  type                     = "ingress"
+  from_port                = 3000
+  to_port                  = 3000
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.lb_sg.id
+  security_group_id        = aws_security_group.ecs_service_sg.id
+}

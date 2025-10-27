@@ -4,7 +4,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
+import { EnrollmentsService } from 'src/enrollments/enrollments.service';
+import { ServicesService } from 'src/services/services.service';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { CreateProviderDto } from './dto/create-provider.dto';
@@ -18,21 +22,27 @@ export class ProviderService {
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
     private readonly userService: UserService,
+    private readonly gatewayPaymentService: GatewayPaymentService,
+    private readonly servicesService: ServicesService,
+    private readonly enrollmentsService: EnrollmentsService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findOneByOrFail(
     providerData: Partial<Provider>,
     getEnrollments = false,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { services, ...findCriteria } = providerData;
+
     const provider = await this.providerRepository.findOne({
-      where: providerData,
+      where: findCriteria,
       relations: [
         'user',
         'services',
         ...(getEnrollments ? ['services.enrollments'] : []),
       ],
     });
-
     if (!provider) {
       throw new NotFoundException('Provider not found');
     }
@@ -103,6 +113,16 @@ export class ProviderService {
     provider.bio = updateProviderDto.bio ?? provider.bio;
     provider.businessPhone =
       updateProviderDto.businessPhone ?? provider.businessPhone;
+    provider.status = updateProviderDto.status ?? provider.status;
+    provider.providerPaymentId = updateProviderDto.providerPaymentId;
+
+    if (updateProviderDto.paymentCustomerId) {
+      provider.paymentCustomerId = updateProviderDto.paymentCustomerId;
+    }
+
+    if (updateProviderDto.subscriptionId) {
+      provider.subscriptionId = updateProviderDto.subscriptionId;
+    }
 
     const updated = await this.providerRepository.save(provider);
 
@@ -135,5 +155,75 @@ export class ProviderService {
     const provider = await this.findOneByOrFail({ id: providerId });
 
     return provider;
+  }
+
+  async createProviderConnection({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    let provider = user.providerProfile;
+
+    if (!provider.providerPaymentId) {
+      const newAccount =
+        await this.gatewayPaymentService.createConnectedAccount({
+          email: user.email,
+        });
+      provider.providerPaymentId = newAccount.id;
+      provider = await this.providerRepository.save(provider);
+    }
+
+    const refreshUrl =
+      this.configService.get<string>('STRIPE_ONBOARDING_REFRESH_URL') ?? '';
+    const returnUrl =
+      this.configService.get<string>('STRIPE_ONBOARDING_RETURN_URL') ?? '';
+
+    const accountLink = await this.gatewayPaymentService.createAccountLink(
+      provider.providerPaymentId!,
+      refreshUrl,
+      returnUrl,
+    );
+
+    return accountLink;
+  }
+  async getServices({
+    userId,
+    query,
+    isActive,
+  }: {
+    userId: string;
+    query?: string;
+    isActive?: boolean;
+  }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    const provider = user.providerProfile;
+
+    const services = await this.servicesService.findAllByProvider({
+      providerId: provider.id,
+      query,
+      isActive,
+    });
+
+    return services;
+  }
+
+  async getEnrollments({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    if (!user.providerProfile) {
+      throw new BadRequestException('User does not have a provider profile.');
+    }
+
+    const provider = user.providerProfile;
+
+    const enrollments = await this.enrollmentsService.findAllByProvider({
+      providerId: provider.id,
+    });
+
+    return enrollments;
   }
 }

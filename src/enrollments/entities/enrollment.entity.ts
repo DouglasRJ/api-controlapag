@@ -2,6 +2,7 @@ import { ChargeException } from 'src/charge-exception/entities/charge-exception.
 import { ChargeSchedule } from 'src/charge-schedule/entities/charge-schedule.entity';
 import { Charge } from 'src/charge/entities/charge.entity';
 import { Client } from 'src/client/entities/client.entity';
+import { ServiceSchedule } from 'src/service-schedule/entities/service-schedule.entity';
 import { Service } from 'src/services/entities/service.entity';
 import {
   Column,
@@ -65,4 +66,13 @@ export class Enrollments {
 
   @OneToMany(() => Charge, charge => charge.enrollment)
   charges: Charge[];
+
+  @OneToMany(
+    () => ServiceSchedule,
+    serviceSchedules => serviceSchedules.enrollment,
+    {
+      cascade: true,
+    },
+  )
+  serviceSchedules: ServiceSchedule[];
 }

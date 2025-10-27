@@ -6,15 +6,18 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
 import { ChargeService } from './charge.service';
 import { ChargeResponseDto } from './dto/charge-response.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
+import { CreateManualChargeDto } from './dto/create-manual-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 
-@Controller('charge-')
+@Controller('charge')
 export class ChargeController {
   constructor(private readonly chargeService: ChargeService) {}
   @Get()
@@ -63,5 +66,18 @@ export class ChargeController {
       chargeId: id,
     });
     return new ChargeResponseDto(charges);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('manual')
+  async createManualCharge(
+    @Req() req: AuthenticatedRequest,
+    @Body() createManualChargeDto: CreateManualChargeDto,
+  ) {
+    const charge = await this.chargeService.createManualCharge(
+      req.user,
+      createManualChargeDto,
+    );
+    return new ChargeResponseDto(charge);
   }
 }

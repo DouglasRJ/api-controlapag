@@ -6,15 +6,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { ClientModule } from './client/client.module';
-import { ProviderModule } from './provider/provider.module';
-import { UserModule } from './user/user.module';
-import { ServicesModule } from './services/services.module';
-import { EnrollmentsModule } from './enrollments/enrollments.module';
-import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 import { ChargeExceptionModule } from './charge-exception/charge-exception.module';
+import { ChargeScheduleModule } from './charge-schedule/charge-schedule.module';
 import { ChargeModule } from './charge/charge.module';
+import { ClientModule } from './client/client.module';
 import { CronModule } from './cron/cron.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { PaymentModule } from './payment/payment.module';
+import { ProviderModule } from './provider/provider.module';
+import { ServiceScheduleModule } from './service-schedule/service-schedule.module';
+import { ServicesModule } from './services/services.module';
+import { UserModule } from './user/user.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -41,6 +45,9 @@ import { CronModule } from './cron/cron.module';
       synchronize: false,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
     UserModule,
     AuthModule,
@@ -52,6 +59,10 @@ import { CronModule } from './cron/cron.module';
     ChargeExceptionModule,
     ChargeModule,
     CronModule,
+    PaymentModule,
+    WebhookModule,
+    DashboardModule,
+    ServiceScheduleModule,
   ],
   controllers: [AppController],
   providers: [
