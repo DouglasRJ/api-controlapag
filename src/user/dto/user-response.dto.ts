@@ -1,6 +1,7 @@
 import { ClientResponseDto } from 'src/client/dto/client-response.dto';
 import { ProviderResponseDto } from 'src/provider/dto/provider-response.dto';
 import { User } from '../entities/user.entity';
+import { USER_ROLE } from '../enum/user-role.enum';
 
 export class UserResponseDto {
   readonly id: string;
@@ -9,6 +10,7 @@ export class UserResponseDto {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly image: string;
+  readonly role: USER_ROLE;
 
   readonly providerProfile?: ProviderResponseDto;
   readonly clientProfile?: ClientResponseDto;
@@ -19,6 +21,7 @@ export class UserResponseDto {
     this.email = user.email;
     this.createdAt = user.createdAt;
     this.updatedAt = user.updatedAt;
+    this.role = user.role;
 
     if (user.image) {
       this.image = user.image;

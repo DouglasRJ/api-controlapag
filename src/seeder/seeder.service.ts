@@ -64,6 +64,7 @@ export class SeederService {
           bio: faker.lorem.paragraph(),
           businessPhone: faker.phone.number(),
           address: faker.location.streetAddress(true),
+          providerPaymentId: 'null',
         };
         const providerProfile = await this.authService.createProvider({
           createUserDto: providerDto,

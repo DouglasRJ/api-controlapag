@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
 import { EnrollmentsService } from 'src/enrollments/enrollments.service';
@@ -24,6 +25,7 @@ export class ProviderService {
     private readonly gatewayPaymentService: GatewayPaymentService,
     private readonly servicesService: ServicesService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findOneByOrFail(
@@ -112,6 +114,7 @@ export class ProviderService {
     provider.businessPhone =
       updateProviderDto.businessPhone ?? provider.businessPhone;
     provider.status = updateProviderDto.status ?? provider.status;
+    provider.providerPaymentId = updateProviderDto.providerPaymentId;
 
     if (updateProviderDto.paymentCustomerId) {
       provider.paymentCustomerId = updateProviderDto.paymentCustomerId;
@@ -171,8 +174,10 @@ export class ProviderService {
       provider = await this.providerRepository.save(provider);
     }
 
-    const refreshUrl = 'http://localhost:8080/reauth';
-    const returnUrl = 'http://localhost:8080/return';
+    const refreshUrl =
+      this.configService.get<string>('STRIPE_ONBOARDING_REFRESH_URL') ?? '';
+    const returnUrl =
+      this.configService.get<string>('STRIPE_ONBOARDING_RETURN_URL') ?? '';
 
     const accountLink = await this.gatewayPaymentService.createAccountLink(
       provider.providerPaymentId!,

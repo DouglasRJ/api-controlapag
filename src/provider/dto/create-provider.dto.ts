@@ -32,4 +32,7 @@ export class CreateProviderDto extends CreateUserDto {
   })
   @IsOptional()
   status?: PROVIDER_STATUS;
+
+  @IsString()
+  providerPaymentId: string;
 }

@@ -29,6 +29,24 @@ export class AuthService {
     private readonly gatewayPaymentService: GatewayPaymentService,
   ) {}
 
+  async getFullUserProfile(user: User): Promise<User> {
+    if (user.role === USER_ROLE.PROVIDER) {
+      try {
+        const userWithProfile = await this.userService.findOneByOrFail({
+          id: user.id,
+        });
+        return userWithProfile;
+      } catch (error) {
+        console.error(
+          'Falha ao buscar perfil de provider para usuário:',
+          user.id,
+          error,
+        );
+      }
+    }
+    return user;
+  }
+
   async login({ loginDto }: { loginDto: LoginDto }) {
     const error = new UnauthorizedException('Email or Password incorrect');
 
