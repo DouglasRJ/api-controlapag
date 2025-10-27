@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.type';
+import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
 import { ClientService } from './client.service';
 import { ClientResponseDto } from './dto/client-response.dto';
 import { CreateClientByProviderResponseDto } from './dto/create-client-by-provider-response.dto';
@@ -72,5 +73,14 @@ export class ClientController {
       createClientDto,
     });
     return new CreateClientByProviderResponseDto(data);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('enrollments')
+  async findClientEnrollments(@Req() req: AuthenticatedRequest) {
+    const enrollments = await this.clientService.findClientEnrollments({
+      userId: req.user.id,
+    });
+    return enrollments.map(e => new EnrollmentsResponseDto(e));
   }
 }

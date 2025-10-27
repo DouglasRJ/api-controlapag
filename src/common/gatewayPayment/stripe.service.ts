@@ -91,7 +91,7 @@ export class StripeService implements GatewayPaymentService {
       mode: 'payment',
       client_reference_id: options.clientReferenceId,
       customer: customer.id,
-      success_url: `http://localhost:8080/payment/success`,
+      success_url: `http://localhost:8081/services`,
       cancel_url: `http://localhost:8080/payment/error`,
       line_items: options.lineItems,
       payment_intent_data: {

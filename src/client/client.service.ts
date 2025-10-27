@@ -33,7 +33,12 @@ export class ClientService {
   ) {
     const user = await this.clientRepository.findOne({
       where: clientData,
-      relations: ['user', ...(getEnrollments ? ['enrollments'] : [])],
+      relations: [
+        'user',
+        ...(getEnrollments
+          ? ['enrollments', 'enrollments.service', 'enrollments.charges']
+          : []),
+      ],
     });
 
     if (!user) {
@@ -207,5 +212,14 @@ export class ClientService {
       client: newClientProfile,
       passwordSetupToken,
     };
+  }
+
+  async findClientEnrollments({ userId }: { userId: string }) {
+    const user = await this.userService.findOneByOrFail({ id: userId });
+    const client = await this.findOneByOrFail(
+      { id: user.clientProfile.id },
+      true,
+    );
+    return client.enrollments;
   }
 }
