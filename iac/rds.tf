@@ -25,7 +25,7 @@ resource "aws_db_instance" "default" {
   instance_class       = var.db_instance_class
   allocated_storage    = 20
   engine               = "postgres"
-  engine_version       = "15.7"
+  engine_version       = "15.12"
   username             = "postgres"
   password             = aws_secretsmanager_secret_version.db_password_version.secret_string
   db_subnet_group_name = aws_db_subnet_group.default.name
