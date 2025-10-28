@@ -22,7 +22,7 @@ async function bootstrap() {
       origin: [
         'https://controlapag.com.br',
         'https://api.controlapag.com.br',
-        'https://www.controlapag.com.br/',
+        'https://www.controlapag.com.br',
         'http://localhost:8081',
       ],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
