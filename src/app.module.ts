@@ -45,9 +45,10 @@ import { WebhookModule } from './webhook/webhook.module';
       synchronize: false,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
     }),
     UserModule,
     AuthModule,
