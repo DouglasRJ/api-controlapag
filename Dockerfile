@@ -18,6 +18,12 @@ COPY package*.json ./
 
 RUN npm install
 
+COPY --from=builder /usr/src/app/src ./src
+
+COPY --from=builder /usr/src/app/tsconfig.json ./tsconfig.json
+COPY --from=builder /usr/src/app/tsconfig.build.json ./tsconfig.build.json
+COPY --from=builder /usr/src/app/nest-cli.json ./nest-cli.json
+
 COPY --from=builder /usr/src/app/dist ./dist
 
 COPY entrypoint.sh .
