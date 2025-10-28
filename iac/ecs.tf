@@ -105,6 +105,14 @@ resource "aws_ecs_task_definition" "api" {
       {
         name      = "INTERNAL_API_TOKEN"
         valueFrom = aws_secretsmanager_secret.internal_api_token.arn
+      },
+      {
+        name      = "STRIPE_API_KEY"
+        valueFrom = aws_secretsmanager_secret.stripe_api_key.arn
+      },
+      {
+        name      = "STRIPE_WEBHOOK_SECRET"
+        valueFrom = aws_secretsmanager_secret.stripe_webhook_secret.arn
       }
     ]
     environment = [
@@ -120,7 +128,11 @@ resource "aws_ecs_task_definition" "api" {
       { name = "JWT_EXPIRATION", value = var.jwt_expiration },
       { name = "S3_BUCKET", value = var.s3_bucket },
       { name = "S3_REGION", value = var.aws_region },
-      { name = "DISABLE_MANAGE_FILE", value = var.disable_manage_file }
+      { name = "DISABLE_MANAGE_FILE", value = var.disable_manage_file },
+      { name = "STRIPE_ID_PLAN", value = var.stripe_id_plan },
+      { name = "PLATFORM_FEE_PERCENTAGE", value = var.platform_fee_percentage },
+      { name = "STRIPE_ONBOARDING_REFRESH_URL", value = var.stripe_onboarding_refresh_url },
+      { name = "STRIPE_ONBOARDING_RETURN_URL", value = var.stripe_onboarding_return_url }
     ]
     logConfiguration = {
       logDriver = "awslogs"

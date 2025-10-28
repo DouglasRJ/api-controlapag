@@ -31,6 +31,15 @@ jobs:
       TF_VAR_internal_api_token: ${{ secrets.TF_VAR_INTERNAL_API_TOKEN }}
       TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
       TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
+      TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
+      TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
+      TF_VAR_platform_fee_percentage:
+        ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}
+      TF_VAR_stripe_onboarding_refresh_url:
+        ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
+      TF_VAR_stripe_onboarding_return_url:
+        ${{ secrets.TF_VAR_STRIPE_ONBOARDING_RETURN_URL }}
 
     steps:
       - name: Checkout code
@@ -130,6 +139,15 @@ jobs:
       TF_VAR_internal_api_token: ${{ secrets.TF_VAR_INTERNAL_API_TOKEN }}
       TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
       TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
+      TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
+      TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
+      TF_VAR_platform_fee_percentage:
+        ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}
+      TF_VAR_stripe_onboarding_refresh_url:
+        ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
+      TF_VAR_stripe_onboarding_return_url:
+        ${{ secrets.TF_VAR_STRIPE_ONBOARDING_RETURN_URL }}
 
     steps:
       - name: Checkout code

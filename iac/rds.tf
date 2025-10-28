@@ -51,3 +51,23 @@ resource "aws_secretsmanager_secret_version" "internal_api_token_version" {
   secret_id     = aws_secretsmanager_secret.internal_api_token.id
   secret_string = var.internal_api_token
 }
+
+resource "aws_secretsmanager_secret" "stripe_api_key" {
+  name                    = "${var.project_name}-stripe-api-key"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "stripe_api_key_version" {
+  secret_id     = aws_secretsmanager_secret.stripe_api_key.id
+  secret_string = var.stripe_api_key
+}
+
+resource "aws_secretsmanager_secret" "stripe_webhook_secret" {
+  name                    = "${var.project_name}-stripe-webhook-secret"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "stripe_webhook_secret_version" {
+  secret_id     = aws_secretsmanager_secret.stripe_webhook_secret.id
+  secret_string = var.stripe_webhook_secret
+}
