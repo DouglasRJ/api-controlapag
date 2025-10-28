@@ -2,7 +2,6 @@ FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-
 RUN npm install
 
 COPY src ./src
@@ -16,12 +15,16 @@ FROM node:18-alpine
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install --omit=dev
+
+RUN npm install
 
 COPY --from=builder /usr/src/app/dist ./dist
 
-EXPOSE 3000
+COPY entrypoint.sh .
 
+RUN chmod +x ./entrypoint.sh
+
+EXPOSE 3000
 ENV PORT 3000
 
-CMD ["node", "dist/main"]
+CMD ["./entrypoint.sh"]
