@@ -19,7 +19,13 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'production') {
     app.use(helmet());
     app.enableCors({
-      origin: 'https://controlapag.com.br',
+      origin: [
+        'https://controlapag.com.br',
+        'https://api.controlapag.com.br',
+        'http://localhost:8081',
+      ],
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
     });
   } else {
     app.enableCors({
