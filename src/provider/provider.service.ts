@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -18,6 +19,8 @@ import { PROVIDER_STATUS } from './enum/provider-status.enum';
 
 @Injectable()
 export class ProviderService {
+  private readonly logger = new Logger(ProviderService.name); // Adicione esta linha se não existir
+
   constructor(
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
@@ -96,25 +99,67 @@ export class ProviderService {
 
   async update({
     providerId,
-    userId,
+    userId, // Este userId vem do handleAccountUpdated
     updateProviderDto,
   }: {
     providerId: string;
     userId: string;
     updateProviderDto: UpdateProviderDto;
   }) {
-    const provider = await this.checkProviderOwnership({
-      providerId,
-      userId,
-    });
+    // Log ANTES de checkProviderOwnership
+    this.logger.log(
+      `ProviderService 'update' called for providerId: ${providerId} by (alleged) userId: ${userId}. DTO: ${JSON.stringify(updateProviderDto)}`,
+    );
 
+    let provider: Provider;
+    try {
+      // *** O PROBLEMA DEVE ESTAR AQUI DENTRO QUANDO CHAMADO PELO WEBHOOK ***
+      provider = await this.checkProviderOwnership({
+        providerId,
+        userId, // A validação aqui provavelmente falha no contexto do webhook
+      });
+      // Log APÓS checkProviderOwnership (se passar)
+      this.logger.log(
+        `checkProviderOwnership passed successfully for providerId: ${providerId} and userId: ${userId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `checkProviderOwnership FAILED for providerId: ${providerId} and userId: ${userId}. Error: ${error.message}`,
+      );
+      // Re-lança o erro para ser pego pelo catch do handleAccountUpdated
+      throw error;
+    }
+
+    // Aplica as atualizações do DTO
     provider.title = updateProviderDto.title ?? provider.title;
     provider.address = updateProviderDto.address ?? provider.address;
     provider.bio = updateProviderDto.bio ?? provider.bio;
     provider.businessPhone =
       updateProviderDto.businessPhone ?? provider.businessPhone;
-    provider.status = updateProviderDto.status ?? provider.status;
-    provider.providerPaymentId = updateProviderDto.providerPaymentId;
+
+    // Aplica a atualização de status vinda do DTO
+    if (updateProviderDto.status) {
+      this.logger.log(
+        `Updating status from ${provider.status} to ${updateProviderDto.status}`,
+      );
+      provider.status = updateProviderDto.status;
+    } else {
+      this.logger.log(
+        `No status update in DTO, keeping current status: ${provider.status}`,
+      );
+    }
+
+    // Não atualize providerPaymentId via DTO neste fluxo geralmente,
+    // mas se precisar, logue:
+    if (
+      updateProviderDto.providerPaymentId &&
+      provider.providerPaymentId !== updateProviderDto.providerPaymentId
+    ) {
+      this.logger.warn(
+        `Updating providerPaymentId from ${provider.providerPaymentId} to ${updateProviderDto.providerPaymentId}`,
+      );
+      provider.providerPaymentId = updateProviderDto.providerPaymentId;
+    }
 
     if (updateProviderDto.paymentCustomerId) {
       provider.paymentCustomerId = updateProviderDto.paymentCustomerId;
@@ -124,9 +169,55 @@ export class ProviderService {
       provider.subscriptionId = updateProviderDto.subscriptionId;
     }
 
-    const updated = await this.providerRepository.save(provider);
+    // Log antes de salvar
+    this.logger.log(
+      `Attempting to save provider ${providerId} with final status: ${provider.status}`,
+    );
+    try {
+      const updated = await this.providerRepository.save(provider);
+      // Log após salvar
+      this.logger.log(
+        `Provider ${providerId} saved successfully with status ${updated.status}.`,
+      );
+      return updated;
+    } catch (saveError) {
+      this.logger.error(
+        `Error SAVING provider ${providerId}:`,
+        saveError.stack ?? saveError.message,
+      );
+      throw saveError; // Re-lança para o catch externo
+    }
+  }
 
-    return updated;
+  async checkProviderOwnership({
+    providerId,
+    userId,
+  }: {
+    providerId: string;
+    userId: string;
+  }) {
+    // Log no início da checagem
+    this.logger.log(
+      `checkProviderOwnership: Checking if user ${userId} owns provider ${providerId}`,
+    );
+    const user = await this.userService.findOneByOrFail({ id: userId });
+
+    if (!user.providerProfile || user.providerProfile.id !== providerId) {
+      // Log antes de lançar a exceção
+      this.logger.warn(
+        `checkProviderOwnership: User ${userId} does NOT own provider ${providerId}. User providerProfile ID: ${user.providerProfile?.id}`,
+      );
+      throw new UnauthorizedException('Not your provider profile');
+    }
+
+    // Busca o provider novamente para garantir que está completo (findOneByOrFail pode não carregar tudo)
+    // Ou pode simplesmente retornar o provider já carregado pelo `user` se as relações estiverem corretas
+    // Ajuste conforme sua necessidade, mas o importante é a validação acima.
+    const provider = await this.findOneByOrFail({ id: providerId }); // Use o findOneByOrFail que já busca relações necessárias
+    this.logger.log(
+      `checkProviderOwnership: Ownership confirmed for user ${userId} and provider ${providerId}`,
+    );
+    return provider; // Retorna o provider encontrado
   }
 
   async remove({ providerId, userId }: { providerId: string; userId: string }) {
@@ -139,23 +230,23 @@ export class ProviderService {
     return provider;
   }
 
-  async checkProviderOwnership({
-    providerId,
-    userId,
-  }: {
-    providerId: string;
-    userId: string;
-  }) {
-    const user = await this.userService.findOneByOrFail({ id: userId });
+  // async checkProviderOwnership({
+  //   providerId,
+  //   userId,
+  // }: {
+  //   providerId: string;
+  //   userId: string;
+  // }) {
+  //   const user = await this.userService.findOneByOrFail({ id: userId });
 
-    if (!user.providerProfile || user.providerProfile.id !== providerId) {
-      throw new UnauthorizedException('Not your provider profile');
-    }
+  //   if (!user.providerProfile || user.providerProfile.id !== providerId) {
+  //     throw new UnauthorizedException('Not your provider profile');
+  //   }
 
-    const provider = await this.findOneByOrFail({ id: providerId });
+  //   const provider = await this.findOneByOrFail({ id: providerId });
 
-    return provider;
-  }
+  //   return provider;
+  // }
 
   async createProviderConnection({ userId }: { userId: string }) {
     const user = await this.userService.findOneByOrFail({ id: userId });
@@ -187,6 +278,7 @@ export class ProviderService {
 
     return accountLink;
   }
+
   async getServices({
     userId,
     query,
