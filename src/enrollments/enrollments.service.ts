@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  addDays,
   addMonths,
   addWeeks,
   addYears,
@@ -339,28 +340,23 @@ export class EnrollmentsService {
         }
       }
 
-      currentDate = addMonths(currentDate, 0);
-      currentDate.setDate(currentDate.getDate() + 1);
-
-      if (
-        chargeSchedule.billingModel === BILLING_MODEL.RECURRING &&
-        chargeSchedule.recurrenceInterval !== RECURRENCE_INTERVAL.WEEKLY &&
-        currentDate.getDate() !== 1
-      ) {
-        const targetDay = chargeSchedule.chargeDay;
-        currentDate = addMonths(currentDate, 1);
-        const daysInMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() + 1,
-          0,
-        ).getDate();
-        currentDate.setDate(Math.min(targetDay, daysInMonth));
-        currentDate = startOfDay(currentDate);
-      } else if (
-        chargeSchedule.billingModel === BILLING_MODEL.RECURRING &&
-        chargeSchedule.recurrenceInterval === RECURRENCE_INTERVAL.WEEKLY
-      ) {
-        currentDate = addWeeks(currentDate, 1);
+      if (chargeSchedule.billingModel === BILLING_MODEL.RECURRING) {
+        if (chargeSchedule.recurrenceInterval === RECURRENCE_INTERVAL.WEEKLY) {
+          currentDate = addWeeks(currentDate, 1);
+          currentDate = startOfDay(currentDate);
+        } else {
+          const targetDay = chargeSchedule.chargeDay;
+          currentDate = addMonths(currentDate, 1);
+          const daysInMonth = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth() + 1,
+            0,
+          ).getDate();
+          currentDate.setDate(Math.min(targetDay, daysInMonth));
+          currentDate = startOfDay(currentDate);
+        }
+      } else {
+        currentDate = addDays(currentDate, 1);
         currentDate = startOfDay(currentDate);
       }
     }

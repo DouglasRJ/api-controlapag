@@ -15,7 +15,6 @@ import { type AuthenticatedRequest } from 'src/auth/types/authenticated-request.
 import { EnrollmentsResponseDto } from 'src/enrollments/dto/enrollments-response.dto';
 import { ServiceResponseDto } from 'src/services/dto/service-response.dto';
 import { ProviderResponseDto } from './dto/provider-response.dto';
-import { UpdateProviderDto } from './dto/update-provider.dto';
 import { ProviderService } from './provider.service';
 
 @Controller('provider')
@@ -41,7 +40,7 @@ export class ProviderController {
   async update(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
-    @Body() updateProviderDto: UpdateProviderDto,
+    @Body() updateProviderDto: any,
   ) {
     const provider = await this.providerService.update({
       providerId: id,

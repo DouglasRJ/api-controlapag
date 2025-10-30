@@ -17,13 +17,13 @@ export class CreateEnrollmentDto {
   @Min(0)
   price: number;
 
-  @IsDateString() // Keeps validation for ISO 8601 or YYYY-MM-DD
+  @IsDateString()
   @IsNotEmpty()
-  startDate: string; // Changed type hint to string
+  startDate: string;
 
   @IsOptional()
-  @IsDateString() // Keeps validation for ISO 8601 or YYYY-MM-DD
-  endDate?: string; // Changed type hint to string
+  @IsDateString()
+  endDate?: string;
 
   @IsString()
   @IsNotEmpty()

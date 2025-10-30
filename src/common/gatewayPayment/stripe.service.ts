@@ -302,53 +302,44 @@ export class StripeService implements GatewayPaymentService {
   private async handleAccountUpdated(account: Stripe.Account) {
     this.logger.log(
       `Webhook account.updated received for account: ${account.id}`,
-    ); // Log inicial
+    );
 
     if (account.payouts_enabled) {
       this.logger.log(
         `Payouts enabled for account ${account.id}. Attempting to find provider.`,
       );
       try {
-        // Busca o provider pelo ID da conta conectada do Stripe
         const provider = await this.providerService.findOneByOrFail({
           providerPaymentId: account.id,
         });
-        // Log para confirmar que o provider foi encontrado e qual o status atual
+
         this.logger.log(
           `Provider found: ${provider.id}, current status: ${provider.status}`,
         );
 
-        // Verifica se o provider existe (findOneByOrFail já faz isso, mas é uma segurança extra)
-        // e se o status atual NÃO é ACTIVE
         if (provider && provider.status !== PROVIDER_STATUS.ACTIVE) {
           this.logger.log(
             `Provider account ${account.id} needs status update. Current: ${provider.status}, Target: ${PROVIDER_STATUS.ACTIVE}. Calling providerService.update...`,
           );
 
-          // Verifica se a relação `user` foi carregada corretamente em `findOneByOrFail`
           if (!provider.user || !provider.user.id) {
             this.logger.error(
               `Provider ${provider.id} found, but associated User or User ID is missing! Cannot update via webhook context.`,
             );
-            return; // Interrompe se não encontrar o usuário associado
+            return;
           }
           this.logger.log(
             `User ID associated with provider: ${provider.user.id}`,
           );
 
-          // *** Ponto Crítico ***
-          // Chama o método update do ProviderService.
-          // O problema é que este método espera um `userId` que "possua" o provider,
-          // o que não existe no contexto do webhook.
           await this.providerService.update({
             providerId: provider.id,
-            userId: provider.user.id, // Passa o ID do usuário dono do provider
+            userId: provider.user.id,
             updateProviderDto: {
               status: PROVIDER_STATUS.ACTIVE,
-              // Não passe outros campos aqui, apenas o status que você quer mudar
             },
           });
-          // Log de sucesso APÓS a chamada
+
           this.logger.log(
             `providerService.update called successfully for provider ${provider.id}. Check ProviderService logs for details.`,
           );
@@ -362,7 +353,6 @@ export class StripeService implements GatewayPaymentService {
           );
         }
       } catch (error) {
-        // Captura erros tanto do findOneByOrFail quanto da chamada ao providerService.update
         this.logger.error(
           `Error processing account.updated for ${account.id}:`,
           error.stack ?? error.message,
