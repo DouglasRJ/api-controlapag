@@ -11,7 +11,9 @@ describe('ServiceScheduleController', () => {
       providers: [ServiceScheduleService],
     }).compile();
 
-    controller = module.get<ServiceScheduleController>(ServiceScheduleController);
+    controller = module.get<ServiceScheduleController>(
+      ServiceScheduleController,
+    );
   });
 
   it('should be defined', () => {

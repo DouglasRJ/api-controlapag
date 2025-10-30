@@ -11,6 +11,7 @@ import { PasswordSetupEmail } from './templates/password-setup.template';
 export class SesEmailService extends EmailService {
   private readonly logger = new Logger(SesEmailService.name);
   private readonly frontendBaseUrl: string;
+  private readonly defaultFromEmail: string;
 
   constructor(
     private readonly mailerService: MailerService,
@@ -21,6 +22,10 @@ export class SesEmailService extends EmailService {
       'FRONTEND_BASE_URL',
       'http://localhost:8081',
     );
+    this.defaultFromEmail = this.configService.get<string>(
+      'DEFAULT_FROM_EMAIL',
+      '',
+    );
   }
 
   async sendEmail(sendEmailDto: SendEmailDto): Promise<void> {
@@ -29,7 +34,7 @@ export class SesEmailService extends EmailService {
         to: sendEmailDto.to,
         subject: sendEmailDto.subject,
         html: sendEmailDto.html,
-        from: sendEmailDto.from,
+        from: sendEmailDto.from || this.defaultFromEmail,
       });
       this.logger.log(`E-mail enviado com sucesso para: ${sendEmailDto.to}`);
     } catch (error) {
@@ -41,12 +46,13 @@ export class SesEmailService extends EmailService {
   }
 
   async sendPasswordSetupEmail(dto: SendPasswordSetupEmailDto): Promise<void> {
-    const setupUrl = `${this.frontendBaseUrl}/definir-senha?token=${dto.token}`;
+    const setupUrl = `${this.frontendBaseUrl}/client-onboarding.token}`;
 
     const html = await render(
       PasswordSetupEmail({
         username: dto.username,
         setupUrl: setupUrl,
+        providerName: dto.providerName,
       }),
     );
 

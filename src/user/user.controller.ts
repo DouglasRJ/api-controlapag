@@ -10,6 +10,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -87,6 +88,13 @@ export class UserController {
   @Delete('me')
   async remove(@Req() req: AuthenticatedRequest) {
     const user = await this.userService.remove(req.user.id);
+    return new UserResponseDto(user);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async removeById(@Param('id') id: string) {
+    const user = await this.userService.remove(id);
     return new UserResponseDto(user);
   }
 }

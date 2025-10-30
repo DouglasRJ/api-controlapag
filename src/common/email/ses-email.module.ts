@@ -3,75 +3,48 @@ import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createTransport, SentMessageInfo, Transporter } from 'nodemailer';
+import { SentMessageInfo } from 'nodemailer';
 import { EmailService } from './email.service';
 import { SesEmailService } from './ses-email.service';
 
-interface CustomTransportOptions {
-  sesClient: SESClient;
-  name?: string;
-  version?: string;
-}
+function createSESTransport(sesClient: SESClient) {
+  return {
+    name: 'SESv3',
+    version: '1.0.0',
+    send: function (
+      mail: any,
+      callback: (err: Error | null, info?: SentMessageInfo) => void,
+    ) {
+      mail.message.build((err: Error | null, message: Buffer) => {
+        if (err) {
+          return callback(err);
+        }
 
-interface MailMessage {
-  message: {
-    build: (callback: (err: Error | null, message: Buffer) => void) => void;
-    getEnvelope: () => { from: string; to: string[] };
-  };
-  data: {
-    from?: string;
-    to?: string | string[];
-    subject?: string;
-    html?: string;
-    text?: string;
-  };
-}
+        const command = new SendRawEmailCommand({
+          RawMessage: {
+            Data: message,
+          },
+        });
 
-class SESv3Transport {
-  name: string;
-  version: string;
-  private sesClient: SESClient;
-
-  constructor(options: CustomTransportOptions) {
-    this.sesClient = options.sesClient;
-    this.name = options.name || 'SESv3';
-    this.version = options.version || '1.0.0';
-  }
-
-  send(
-    mail: MailMessage,
-    callback: (err: Error | null, info?: SentMessageInfo) => void,
-  ): void {
-    mail.message.build((err: Error | null, message: Buffer) => {
-      if (err) {
-        callback(err);
-        return;
-      }
-
-      const command = new SendRawEmailCommand({
-        RawMessage: {
-          Data: message,
-        },
-      });
-
-      this.sesClient
-        .send(command)
-        .then(result => {
-          const envelope = mail.message.getEnvelope();
-          callback(null, {
-            envelope,
-            messageId: result.MessageId || 'unknown',
-            accepted: envelope.to || [],
-            rejected: [],
-            pending: [],
-            response: 'OK',
+        sesClient
+          .send(command)
+          .then(result => {
+            const envelope = mail.message.getEnvelope();
+            callback(null, {
+              envelope,
+              messageId: result.MessageId || 'unknown',
+              accepted: envelope.to || [],
+              rejected: [],
+              pending: [],
+              response: 'OK',
+            });
+          })
+          .catch(error => {
+            callback(error instanceof Error ? error : new Error(String(error)));
           });
-        })
-        .catch(error =>
-          callback(error instanceof Error ? error : new Error(String(error))),
-        );
-    });
-  }
+      });
+    },
+  };
 }
 
 @Module({
@@ -88,8 +61,7 @@ class SESv3Transport {
           credentials: defaultProvider(),
         });
 
-        const sesTransport = new SESv3Transport({ sesClient });
-        const transport: Transporter = createTransport(sesTransport);
+        const transport = createSESTransport(sesClient);
 
         return {
           transport,

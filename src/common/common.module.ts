@@ -9,7 +9,7 @@ import { BcryptHashService } from './hash/bcrypt-hash.service';
 import { HashService } from './hash/hash.service';
 import { ManageFileService } from './manageFile/manageFile.service';
 import { S3Service } from './manageFile/s3-manageFile.service';
-import { MockWhatsappService } from './whatsapp/mock-whatsapp.service';
+import { TwilioWhatsappService } from './whatsapp/twilio-whatsapp.service';
 import { WhatsappService } from './whatsapp/whatsapp.service';
 
 @Module({
@@ -17,7 +17,7 @@ import { WhatsappService } from './whatsapp/whatsapp.service';
     forwardRef(() => UserModule),
     forwardRef(() => ProviderModule),
     forwardRef(() => ChargeModule),
-    EmailModule, // Importar o EmailModule que contém o MailerService configurado
+    EmailModule,
   ],
   providers: [
     {
@@ -34,14 +34,14 @@ import { WhatsappService } from './whatsapp/whatsapp.service';
     },
     {
       provide: WhatsappService,
-      useClass: MockWhatsappService,
+      useClass: TwilioWhatsappService,
     },
   ],
   exports: [
     HashService,
     ManageFileService,
     GatewayPaymentService,
-    EmailModule, // Exportar o EmailModule para outros módulos usarem o EmailService
+    EmailModule,
     WhatsappService,
   ],
 })

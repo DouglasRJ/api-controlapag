@@ -37,7 +37,6 @@ export class ServicesService {
   ) {}
 
   async findOneByOrFail(serviceData: FindOptionsWhere<Service>) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { allowedPaymentMethods, ...findCriteria } = serviceData;
 
     const service = await this.serviceRepository.findOne({
@@ -307,9 +306,6 @@ export class ServicesService {
         return schedule.dayOfMonth === dayOfMonth;
 
       case SERVICE_FREQUENCY.CUSTOM_DAYS:
-        console.warn(
-          `Lógica para ${SERVICE_FREQUENCY.CUSTOM_DAYS} não implementada na geração de ocorrências.`,
-        );
         return false;
 
       default:

@@ -12,31 +12,67 @@ import {
 interface PasswordSetupEmailProps {
   username: string;
   setupUrl: string;
+  providerName?: string;
 }
 
 export const PasswordSetupEmail = ({
   username,
   setupUrl,
+  providerName,
 }: PasswordSetupEmailProps) => (
   <Html>
     <Head />
-    <Preview>Configure sua senha no ControlaPAG</Preview>
+    <Preview>
+      {providerName
+        ? `${providerName} criou sua conta no ControlaPAG`
+        : 'Seu prestador criou sua conta no ControlaPAG'}
+    </Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={heading}>Bem-vindo(a) ao ControlaPAG!</Heading>
-        <Text style={paragraph}>Olá, {username},</Text>
+        <Heading style={heading}>Bem-vindo(a) aa ControlaPAG!</Heading>
+        <Text style={paragraph}>Olá, {username}!</Text>
         <Text style={paragraph}>
-          Seu cadastro foi realizado com sucesso. Para acessar sua conta,
-          primeiro você precisa definir uma senha.
+          {providerName ? (
+            <>
+              <strong>{providerName}</strong> criou uma conta para você na
+              ControlaPAG, nossa plataforma de gestão de pagamentos e
+              assinaturas.
+            </>
+          ) : (
+            <>
+              Seu prestador de serviços criou uma conta para você na
+              ControlaPAG, nossa plataforma de gestão de pagamentos e
+              assinaturas.
+            </>
+          )}
         </Text>
         <Text style={paragraph}>
-          Por favor, clique no botão abaixo para criar sua senha:
+          Para começar a usar a plataforma e acompanhar suas cobranças, você
+          precisa definir sua senha de acesso.
+        </Text>
+        <Text style={paragraph}>
+          Clique no botão abaixo para criar sua senha:
         </Text>
         <Button style={button} href={setupUrl}>
-          Definir Minha Senha
+          Criar Minha Senha
         </Button>
-        <Text style={paragraph}>
-          Se você não solicitou este e-mail, por favor, ignore-o.
+        <Text style={footerText}>
+          Este link é válido por 24 horas. Após definir sua senha, você poderá
+          acessar sua conta e visualizar todas as informações sobre seus
+          serviços e pagamentos.
+        </Text>
+        <Text style={footerText}>
+          {providerName ? (
+            <>
+              Se você não esperava este e-mail, por favor entre em contato com{' '}
+              <strong>{providerName}</strong>.
+            </>
+          ) : (
+            <>
+              Se você não esperava este e-mail, por favor entre em contato com
+              seu prestador de serviços.
+            </>
+          )}
         </Text>
       </Container>
     </Body>
@@ -65,25 +101,35 @@ const heading = {
   fontWeight: 'bold',
   marginTop: '32px',
   textAlign: 'center' as const,
-  color: '#333',
+  color: '#F57418',
 };
 
 const paragraph = {
   fontSize: '16px',
   lineHeight: '26px',
-  color: '#555',
+  color: '#333',
   padding: '0 40px',
+  marginBottom: '16px',
 };
 
 const button = {
-  backgroundColor: '#007bff',
-  borderRadius: '3px',
+  backgroundColor: '#F57418',
+  borderRadius: '6px',
   color: '#fff',
   fontSize: '16px',
+  fontWeight: '600',
   textDecoration: 'none',
   textAlign: 'center' as const,
   display: 'block',
-  width: '200px',
-  padding: '12px 20px',
-  margin: '20px auto',
+  width: '220px',
+  padding: '14px 24px',
+  margin: '24px auto',
+};
+
+const footerText = {
+  fontSize: '14px',
+  lineHeight: '22px',
+  color: '#666',
+  padding: '0 40px',
+  marginTop: '24px',
 };

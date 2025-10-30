@@ -1,4 +1,9 @@
-import { IsNotEmpty, IsString, IsStrongPassword } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsStrongPassword,
+} from 'class-validator';
 
 export class SetInitialPasswordDto {
   @IsString()
@@ -20,4 +25,16 @@ export class SetInitialPasswordDto {
     },
   )
   newPassword: string;
+
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
 }

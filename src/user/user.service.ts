@@ -96,7 +96,6 @@ export class UserService {
       updateUserDto.currentPassword,
       user.password,
     );
-    console.log('isCurrentPasswordValid', isCurrentPasswordValid);
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('Current password invalid');
     }
@@ -109,7 +108,7 @@ export class UserService {
 
   async remove(id: string) {
     const user = await this.findOneByOrFail({ id });
-    await this.userRepository.delete(user);
+    await this.userRepository.delete(id);
 
     return user;
   }

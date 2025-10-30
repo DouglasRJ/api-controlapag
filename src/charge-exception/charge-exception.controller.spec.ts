@@ -11,7 +11,9 @@ describe('ChargeExceptionController', () => {
       providers: [ChargeExceptionService],
     }).compile();
 
-    controller = module.get<ChargeExceptionController>(ChargeExceptionController);
+    controller = module.get<ChargeExceptionController>(
+      ChargeExceptionController,
+    );
   });
 
   it('should be defined', () => {

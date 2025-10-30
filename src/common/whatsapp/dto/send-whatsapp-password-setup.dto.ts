@@ -1,4 +1,6 @@
 export class SendWhatsappPasswordSetupDto {
-  phone: string;
+  to: string;
+  username?: string;
   token: string;
+  providerName?: string;
 }

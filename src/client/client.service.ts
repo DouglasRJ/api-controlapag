@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { JwtPayload } from 'src/auth/types/jwt-payload.type';
 import { EmailService } from 'src/common/email/email.service';
+import { WhatsappService } from 'src/common/whatsapp/whatsapp.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
@@ -30,6 +31,7 @@ export class ClientService {
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly whatsappService: WhatsappService,
   ) {}
 
   async findOneByOrFail(
@@ -218,6 +220,7 @@ export class ClientService {
         to: newClientProfile.user.email,
         username: newClientProfile.user.username,
         token: passwordSetupToken,
+        providerName: providerUser.username,
       });
       this.logger.log(
         `Email de setup de senha enviado para: ${newClientProfile.user.email}`,
@@ -227,6 +230,25 @@ export class ClientService {
         `Falha ao enviar email para ${newClientProfile.user.email}`,
         error,
       );
+    }
+
+    if (newClientProfile.phone) {
+      try {
+        await this.whatsappService.sendPasswordSetupWhatsApp({
+          to: newClientProfile.phone,
+          username: newClientProfile.user.username,
+          token: passwordSetupToken,
+          providerName: providerUser.username,
+        });
+        this.logger.log(
+          `WhatsApp de setup de senha enviado para: ${newClientProfile.phone}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Falha ao enviar WhatsApp para ${newClientProfile.phone}`,
+          error,
+        );
+      }
     }
 
     return {

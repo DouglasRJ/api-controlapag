@@ -28,15 +28,4 @@ export class PaymentController {
   ) {
     return this.paymentService.createClientChargePayment(chargeId, req.user);
   }
-
-  // @Post('webhook')
-  // async handleWebhook(
-  //   @Headers('stripe-signature') signature: string,
-  //   @Req() req: RawBodyRequest<Request>,
-  // ) {
-  //   if (!signature) {
-  //     throw new UnauthorizedException('Missing Stripe signature.');
-  //   }
-  //   return this.paymentService.handleWebhook(req.rawBody, signature);
-  // }
 }

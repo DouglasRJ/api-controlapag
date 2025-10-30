@@ -166,15 +166,44 @@ export class AuthService {
         setInitialPasswordDto.token,
       );
 
-      const user = await this.userService.findOneByOrFail({ id: payload.sub });
+      return this.dataSource.transaction(async transactionalEntityManager => {
+        const user = await this.userService.findOneByOrFail({
+          id: payload.sub,
+        });
 
-      const hashedPassword = await this.hashService.hash(
-        setInitialPasswordDto.newPassword,
-      );
+        const hashedPassword = await this.hashService.hash(
+          setInitialPasswordDto.newPassword,
+        );
 
-      user.password = hashedPassword;
+        user.password = hashedPassword;
 
-      return this.userService.save(user);
+        if (setInitialPasswordDto.username !== undefined) {
+          user.username = setInitialPasswordDto.username;
+        }
+
+        const updatedUser = await transactionalEntityManager.save(user);
+
+        if (user.clientProfile) {
+          const clientProfile = user.clientProfile;
+          let clientUpdated = false;
+
+          if (setInitialPasswordDto.phone !== undefined) {
+            clientProfile.phone = setInitialPasswordDto.phone;
+            clientUpdated = true;
+          }
+
+          if (setInitialPasswordDto.address !== undefined) {
+            clientProfile.address = setInitialPasswordDto.address;
+            clientUpdated = true;
+          }
+
+          if (clientUpdated) {
+            await transactionalEntityManager.save(clientProfile);
+          }
+        }
+
+        return updatedUser;
+      });
     } catch (error) {
       throw new UnauthorizedException(`Invalid or expired token: ${error}`);
     }
