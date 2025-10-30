@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    key            = "controlapag/dev/terraform.tfstate" 
+    key = "controlapag/dev/terraform.tfstate"
   }
 }
 

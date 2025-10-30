@@ -14,8 +14,74 @@ on:
         default: 'plan'
 
 jobs:
+  validate:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_project_name: 'devcontrolapag-api'
+      TF_VAR_db_instance_class: 'db.t3.micro'
+      TF_VAR_ecs_cpu: '256'
+      TF_VAR_ecs_memory: '512'
+      TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+      TF_VAR_internal_api_token: ${{ secrets.TF_VAR_INTERNAL_API_TOKEN }}
+      TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+      TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
+      TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
+      TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
+      TF_VAR_platform_fee_percentage: ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}
+      TF_VAR_stripe_onboarding_refresh_url: ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
+      TF_VAR_stripe_onboarding_return_url: ${{ secrets.TF_VAR_STRIPE_ONBOARDING_RETURN_URL }}
+      TF_VAR_default_from_email: ${{ secrets.TF_VAR_DEFAULT_FROM_EMAIL }}
+      TF_VAR_frontend_base_url: ${{ secrets.TF_VAR_FRONTEND_BASE_URL }}
+      TF_VAR_ses_domain: ${{ secrets.TF_VAR_SES_DOMAIN }}
+      TF_VAR_ses_verified_email: ${{ secrets.TF_VAR_SES_VERIFIED_EMAIL }}
+      TF_VAR_twilio_account_sid: ${{ secrets.TF_VAR_TWILIO_ACCOUNT_SID }}
+      TF_VAR_twilio_auth_token: ${{ secrets.TF_VAR_TWILIO_AUTH_TOKEN }}
+      TF_VAR_twilio_whatsapp_from: ${{ secrets.TF_VAR_TWILIO_WHATSAPP_FROM }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run custom validation script
+        run: |
+          bash .github/scripts/validate-deployment.sh
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ./iac
+        continue-on-error: false
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=controlapag/dev/terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}"
+        working-directory: ./iac
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./iac
+
+      - name: Check for Terraform security issues (tfsec)
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ./iac
+          soft_fail: true
+
   terraform-plan-apply:
     name: Terraform ${{ github.event.inputs.action }}
+    needs: validate
     if:
       github.event.inputs.action == 'plan' || github.event.inputs.action ==
       'apply'
@@ -45,6 +111,10 @@ jobs:
       TF_VAR_ses_domain: ${{ secrets.TF_VAR_SES_DOMAIN }}
       TF_VAR_ses_verified_email: ${{ secrets.TF_VAR_SES_VERIFIED_EMAIL }}
       TF_VAR_route53_zone_id: ${{ secrets.TF_VAR_ROUTE53_ZONE_ID }}
+      TF_VAR_twilio_account_sid: ${{ secrets.TF_VAR_TWILIO_ACCOUNT_SID }}
+      TF_VAR_twilio_auth_token: ${{ secrets.TF_VAR_TWILIO_AUTH_TOKEN }}
+      TF_VAR_twilio_whatsapp_from: ${{ secrets.TF_VAR_TWILIO_WHATSAPP_FROM }}
+      TF_VAR_twilio_password_setup_template_sid: ${{ secrets.TF_VAR_TWILIO_PASSWORD_SETUP_TEMPLATE_SID }}
 
     steps:
       - name: Checkout code
@@ -131,6 +201,7 @@ jobs:
 
   destroy:
     name: Destroy Infrastructure
+    needs: validate
     if: github.event.inputs.action == 'destroy'
     runs-on: ubuntu-latest
 
@@ -158,6 +229,10 @@ jobs:
       TF_VAR_ses_domain: ${{ secrets.TF_VAR_SES_DOMAIN }}
       TF_VAR_ses_verified_email: ${{ secrets.TF_VAR_SES_VERIFIED_EMAIL }}
       TF_VAR_route53_zone_id: ${{ secrets.TF_VAR_ROUTE53_ZONE_ID }}
+      TF_VAR_twilio_account_sid: ${{ secrets.TF_VAR_TWILIO_ACCOUNT_SID }}
+      TF_VAR_twilio_auth_token: ${{ secrets.TF_VAR_TWILIO_AUTH_TOKEN }}
+      TF_VAR_twilio_whatsapp_from: ${{ secrets.TF_VAR_TWILIO_WHATSAPP_FROM }}
+      TF_VAR_twilio_password_setup_template_sid: ${{ secrets.TF_VAR_TWILIO_PASSWORD_SETUP_TEMPLATE_SID }}
 
     steps:
       - name: Checkout code

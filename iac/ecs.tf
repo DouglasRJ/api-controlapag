@@ -1,7 +1,7 @@
 resource "aws_ecr_repository" "api" {
-  name = "${var.project_name}/api"
-   force_delete         = true
-  image_tag_mutability = "MUTABLE" 
+  name                 = "${var.project_name}/api"
+  force_delete         = true
+  image_tag_mutability = "MUTABLE"
 }
 
 resource "aws_ecs_cluster" "main" {
@@ -61,7 +61,7 @@ resource "aws_lb_listener" "http" {
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${var.project_name}-ecs-execution-role"
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17",
+    Version = "2012-10-17",
     Statement = [{
       Action    = "sts:AssumeRole",
       Effect    = "Allow",
@@ -82,6 +82,7 @@ resource "aws_ecs_task_definition" "api" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([{
     name      = "api-container"
@@ -90,7 +91,7 @@ resource "aws_ecs_task_definition" "api" {
     memory    = tonumber(var.ecs_memory)
     essential = true
     portMappings = [{
-      containerPort = 3000 
+      containerPort = 3000
       hostPort      = 3000
     }]
     secrets = [
@@ -134,7 +135,11 @@ resource "aws_ecs_task_definition" "api" {
       { name = "STRIPE_ONBOARDING_REFRESH_URL", value = var.stripe_onboarding_refresh_url },
       { name = "STRIPE_ONBOARDING_RETURN_URL", value = var.stripe_onboarding_return_url },
       { name = "DEFAULT_FROM_EMAIL", value = var.default_from_email },
-      { name = "FRONTEND_BASE_URL", value = var.frontend_base_url }
+      { name = "FRONTEND_BASE_URL", value = var.frontend_base_url },
+      { name = "TWILIO_ACCOUNT_SID", value = var.twilio_account_sid },
+      { name = "TWILIO_AUTH_TOKEN", value = var.twilio_auth_token },
+      { name = "TWILIO_WHATSAPP_FROM", value = var.twilio_whatsapp_from },
+      { name = "TWILIO_PASSWORD_SETUP_TEMPLATE_SID", value = var.twilio_password_setup_template_sid }
     ]
     logConfiguration = {
       logDriver = "awslogs"

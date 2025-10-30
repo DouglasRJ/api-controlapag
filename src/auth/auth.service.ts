@@ -124,7 +124,17 @@ export class AuthService {
         });
         await transactionalEntityManager.save(newProviderProfile);
 
-        return newProviderProfile;
+        const jwtPayload: JwtPayload = {
+          sub: newProviderProfile.user.id,
+          email: newProviderProfile.user.email,
+        };
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload);
+
+        return {
+          provider: newProviderProfile,
+          accessToken,
+        };
       } catch (error) {
         throw new BadRequestException(`Provider not created: ${error}`);
       }
@@ -147,7 +157,17 @@ export class AuthService {
         });
         await transactionalEntityManager.save(newClientProfile);
 
-        return newClientProfile;
+        const jwtPayload: JwtPayload = {
+          sub: newClientProfile.user.id,
+          email: newClientProfile.user.email,
+        };
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload);
+
+        return {
+          client: newClientProfile,
+          accessToken,
+        };
       } catch (error) {
         throw new BadRequestException(`Client not created: ${error}`);
       }
