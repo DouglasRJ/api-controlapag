@@ -40,6 +40,11 @@ jobs:
         ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
       TF_VAR_stripe_onboarding_return_url:
         ${{ secrets.TF_VAR_STRIPE_ONBOARDING_RETURN_URL }}
+      TF_VAR_default_from_email: ${{ secrets.TF_VAR_DEFAULT_FROM_EMAIL }}
+      TF_VAR_frontend_base_url: ${{ secrets.TF_VAR_FRONTEND_BASE_URL }}
+      TF_VAR_ses_domain: ${{ secrets.TF_VAR_SES_DOMAIN }}
+      TF_VAR_ses_verified_email: ${{ secrets.TF_VAR_SES_VERIFIED_EMAIL }}
+      TF_VAR_route53_zone_id: ${{ secrets.TF_VAR_ROUTE53_ZONE_ID }}
 
     steps:
       - name: Checkout code
@@ -148,6 +153,11 @@ jobs:
         ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
       TF_VAR_stripe_onboarding_return_url:
         ${{ secrets.TF_VAR_STRIPE_ONBOARDING_RETURN_URL }}
+      TF_VAR_default_from_email: ${{ secrets.TF_VAR_DEFAULT_FROM_EMAIL }}
+      TF_VAR_frontend_base_url: ${{ secrets.TF_VAR_FRONTEND_BASE_URL }}
+      TF_VAR_ses_domain: ${{ secrets.TF_VAR_SES_DOMAIN }}
+      TF_VAR_ses_verified_email: ${{ secrets.TF_VAR_SES_VERIFIED_EMAIL }}
+      TF_VAR_route53_zone_id: ${{ secrets.TF_VAR_ROUTE53_ZONE_ID }}
 
     steps:
       - name: Checkout code
