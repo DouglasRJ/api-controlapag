@@ -132,7 +132,9 @@ resource "aws_ecs_task_definition" "api" {
       { name = "STRIPE_ID_PLAN", value = var.stripe_id_plan },
       { name = "PLATFORM_FEE_PERCENTAGE", value = var.platform_fee_percentage },
       { name = "STRIPE_ONBOARDING_REFRESH_URL", value = var.stripe_onboarding_refresh_url },
-      { name = "STRIPE_ONBOARDING_RETURN_URL", value = var.stripe_onboarding_return_url }
+      { name = "STRIPE_ONBOARDING_RETURN_URL", value = var.stripe_onboarding_return_url },
+      { name = "DEFAULT_FROM_EMAIL", value = var.default_from_email },
+      { name = "FRONTEND_BASE_URL", value = var.frontend_base_url }
     ]
     logConfiguration = {
       logDriver = "awslogs"

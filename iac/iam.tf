@@ -22,6 +22,32 @@ resource "aws_iam_policy" "ecs_secrets_policy" {
   })
 }
 
+# IAM Policy para permitir envio de emails via SES
+resource "aws_iam_policy" "ecs_ses_policy" {
+  name        = "${var.project_name}-ecs-ses-policy"
+  description = "Allows ECS tasks to send emails via SES"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail",
+          "ses:SendTemplatedEmail"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_ses_attachment" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.ecs_ses_policy.arn
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_secrets_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = aws_iam_policy.ecs_secrets_policy.arn

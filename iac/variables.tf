@@ -72,3 +72,32 @@ variable "stripe_onboarding_refresh_url" {
 variable "stripe_onboarding_return_url" {
   type        = string
 }
+
+# SES Variables
+variable "ses_domain" {
+  type        = string
+  description = "Domínio verificado no SES (deixe vazio se não usar domínio customizado)"
+  default     = ""
+}
+
+variable "ses_verified_email" {
+  type        = string
+  description = "Email verificado no SES para uso em sandbox (deixe vazio em produção)"
+  default     = ""
+}
+
+variable "route53_zone_id" {
+  type        = string
+  description = "Zone ID do Route53 para configurar registros DNS do SES (deixe vazio se não usar)"
+  default     = ""
+}
+
+variable "default_from_email" {
+  type        = string
+  description = "Email padrão para envio de emails via SES"
+}
+
+variable "frontend_base_url" {
+  type        = string
+  description = "URL base do frontend para links em emails"
+}

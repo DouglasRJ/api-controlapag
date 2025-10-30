@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { JwtPayload } from 'src/auth/types/jwt-payload.type';
+import { EmailService } from 'src/common/email/email.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { UserService } from 'src/user/user.service';
@@ -19,12 +21,15 @@ import { Client } from './entities/client.entity';
 
 @Injectable()
 export class ClientService {
+  private readonly logger = new Logger(ClientService.name);
+
   constructor(
     @InjectRepository(Client)
     private readonly clientRepository: Repository<Client>,
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   async findOneByOrFail(
@@ -207,6 +212,22 @@ export class ClientService {
     const passwordSetupToken = await this.jwtService.signAsync(jwtPayload, {
       expiresIn: '24h',
     });
+
+    try {
+      await this.emailService.sendPasswordSetupEmail({
+        to: newClientProfile.user.email,
+        username: newClientProfile.user.username,
+        token: passwordSetupToken,
+      });
+      this.logger.log(
+        `Email de setup de senha enviado para: ${newClientProfile.user.email}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Falha ao enviar email para ${newClientProfile.user.email}`,
+        error,
+      );
+    }
 
     return {
       client: newClientProfile,
