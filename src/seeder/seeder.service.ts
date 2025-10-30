@@ -69,7 +69,7 @@ export class SeederService {
         const providerProfile = await this.authService.createProvider({
           createUserDto: providerDto,
         });
-        createdProviders.push(providerProfile);
+        createdProviders.push(providerProfile.provider);
         this.logger.log(`Provider created: ${providerDto.email}`);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -120,13 +120,13 @@ export class SeederService {
           });
 
           const fullClientProfile = await this.clientService.findOneByOrFail(
-            { id: createdClientProfile.id },
+            { id: createdClientProfile.client.id },
             false,
           );
 
           if (!fullClientProfile.user) {
             throw new Error(
-              `User relation not loaded for client ${createdClientProfile.id}`,
+              `User relation not loaded for client ${createdClientProfile.client.id}`,
             );
           }
 
