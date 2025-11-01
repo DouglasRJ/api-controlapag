@@ -21,6 +21,7 @@ export class StripeService implements GatewayPaymentService {
   private stripe: Stripe;
   private webhookSecret: string;
   private platformWebhookSecret: string;
+  private frontendBaseUrl: string;
 
   constructor(
     private configService: ConfigService,
@@ -62,6 +63,11 @@ export class StripeService implements GatewayPaymentService {
       );
       this.platformWebhookSecret = '';
     }
+
+    this.frontendBaseUrl = this.configService.get<string>(
+      'FRONTEND_BASE_URL',
+      'http://localhost:8081',
+    );
   }
 
   async createSubscriptionCheckout(options: {
@@ -78,8 +84,8 @@ export class StripeService implements GatewayPaymentService {
       mode: 'subscription',
       client_reference_id: options.clientReferenceId,
       customer: customer.id,
-      success_url: `http://localhost:8080/subscription/success`,
-      cancel_url: `http://localhost:8080/subscription/error`,
+      success_url: `${this.frontendBaseUrl}/subscription/success`,
+      cancel_url: `${this.frontendBaseUrl}/subscription/error`,
       line_items: [{ price: options.planId, quantity: 1 }],
     });
 
@@ -95,18 +101,24 @@ export class StripeService implements GatewayPaymentService {
     lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
     onBehalfOfAccountId: string;
     applicationFeeAmount: number;
+    enrollmentId?: string;
+    serviceId?: string;
   }): Promise<{ url: string }> {
     const customer = await this.createCustomer({
       email: options.customerEmail,
     });
+
+    const successUrl = options.enrollmentId
+      ? `${this.frontendBaseUrl}/enrollments/${options.enrollmentId}`
+      : `${this.frontendBaseUrl}/services`;
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card', 'boleto'],
       mode: 'payment',
       client_reference_id: options.clientReferenceId,
       customer: customer.id,
-      success_url: `http://localhost:8081/services`,
-      cancel_url: `http://localhost:8080/payment/error`,
+      success_url: successUrl,
+      cancel_url: `${this.frontendBaseUrl}/payment/error`,
       line_items: options.lineItems,
       payment_intent_data: {
         application_fee_amount: options.applicationFeeAmount,

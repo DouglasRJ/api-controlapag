@@ -21,9 +21,16 @@ export abstract class GatewayPaymentService {
     lineItems: any[];
     onBehalfOfAccountId: string;
     applicationFeeAmount: number;
+    enrollmentId?: string;
+    serviceId?: string;
   }): Promise<{ url: string }>;
 
   abstract handleWebhook(
+    payload: Buffer,
+    signature: string,
+  ): Promise<{ received: boolean }>;
+
+  abstract handlePlatformWebhook(
     payload: Buffer,
     signature: string,
   ): Promise<{ received: boolean }>;

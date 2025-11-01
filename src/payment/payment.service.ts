@@ -135,6 +135,8 @@ export class PaymentService {
 
       onBehalfOfAccountId: provider.providerPaymentId,
       applicationFeeAmount: applicationFee,
+      enrollmentId: enrollment.id,
+      serviceId: enrollment.service.id,
     });
   }
 
