@@ -17,6 +17,9 @@ jobs:
   validate:
     name: Validate Configuration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     env:
       TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
@@ -78,6 +81,7 @@ jobs:
         with:
           working_directory: ./iac
           soft_fail: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   terraform-plan-apply:
     name: Terraform ${{ github.event.inputs.action }}
@@ -86,6 +90,9 @@ jobs:
       github.event.inputs.action == 'plan' || github.event.inputs.action ==
       'apply'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     env:
       TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
@@ -164,6 +171,9 @@ jobs:
       needs.terraform-plan-apply.result == 'success' &&
       github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -204,6 +214,9 @@ jobs:
     needs: validate
     if: github.event.inputs.action == 'destroy'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     env:
       TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
