@@ -15,7 +15,8 @@ resource "aws_iam_policy" "ecs_secrets_policy" {
           aws_secretsmanager_secret.jwt_secret.arn,
           aws_secretsmanager_secret.internal_api_token.arn,
           aws_secretsmanager_secret.stripe_api_key.arn,
-          aws_secretsmanager_secret.stripe_webhook_secret.arn
+          aws_secretsmanager_secret.stripe_webhook_secret.arn,
+          aws_secretsmanager_secret.stripe_platform_webhook_secret.arn
         ]
       }
     ]

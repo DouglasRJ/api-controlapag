@@ -258,6 +258,10 @@ export class StripeService implements GatewayPaymentService {
   async handleWebhook(payload: Buffer, signature: string) {
     let event: Stripe.Event;
 
+    this.logger.log(
+      `Attempting to verify CONNECT webhook signature. Secret length: ${this.webhookSecret.length}`,
+    );
+
     try {
       event = this.stripe.webhooks.constructEvent(
         payload,
@@ -265,7 +269,10 @@ export class StripeService implements GatewayPaymentService {
         this.webhookSecret,
       );
     } catch (err) {
-      this.logger.error(`Webhook signature verification failed.`, err);
+      this.logger.error(
+        `CONNECT webhook signature verification failed. Secret starts with: ${this.webhookSecret.substring(0, 10)}...`,
+        err,
+      );
       throw new BadRequestException(`Webhook error: ${err}`);
     }
 
@@ -286,6 +293,10 @@ export class StripeService implements GatewayPaymentService {
   async handlePlatformWebhook(payload: Buffer, signature: string) {
     let event: Stripe.Event;
 
+    this.logger.log(
+      `Attempting to verify PLATFORM webhook signature. Secret length: ${this.platformWebhookSecret.length}`,
+    );
+
     try {
       event = this.stripe.webhooks.constructEvent(
         payload,
@@ -293,7 +304,10 @@ export class StripeService implements GatewayPaymentService {
         this.platformWebhookSecret,
       );
     } catch (err) {
-      this.logger.error(`Platform webhook signature verification failed.`, err);
+      this.logger.error(
+        `PLATFORM webhook signature verification failed. Secret starts with: ${this.platformWebhookSecret.substring(0, 10)}...`,
+        err,
+      );
       throw new BadRequestException(`Webhook error: ${err}`);
     }
 

@@ -1,6 +1,7 @@
 import {
   Controller,
   Headers,
+  Logger,
   Post,
   Req,
   UnauthorizedException,
@@ -11,6 +12,8 @@ import { PaymentService } from 'src/payment/payment.service';
 
 @Controller('webhook')
 export class WebhookController {
+  private readonly logger = new Logger(WebhookController.name);
+
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post('stripe')
@@ -18,6 +21,10 @@ export class WebhookController {
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>,
   ) {
+    this.logger.log(
+      `Received webhook at /webhook/stripe (CONNECT). Signature present: ${!!signature}`,
+    );
+
     if (!signature) {
       throw new UnauthorizedException('Missing Stripe signature.');
     }
@@ -33,6 +40,10 @@ export class WebhookController {
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>,
   ) {
+    this.logger.log(
+      `Received webhook at /webhook/stripe-platform (PLATFORM). Signature present: ${!!signature}`,
+    );
+
     if (!signature) {
       throw new UnauthorizedException('Missing Stripe signature.');
     }
