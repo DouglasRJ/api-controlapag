@@ -57,6 +57,11 @@ variable "stripe_webhook_secret" {
   sensitive = true
 }
 
+variable "stripe_platform_webhook_secret" {
+  type      = string
+  sensitive = true
+}
+
 variable "stripe_id_plan" {
   type = string
 }

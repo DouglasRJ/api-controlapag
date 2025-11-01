@@ -71,3 +71,13 @@ resource "aws_secretsmanager_secret_version" "stripe_webhook_secret_version" {
   secret_id     = aws_secretsmanager_secret.stripe_webhook_secret.id
   secret_string = var.stripe_webhook_secret
 }
+
+resource "aws_secretsmanager_secret" "stripe_platform_webhook_secret" {
+  name                    = "${var.project_name}-stripe-platform-webhook-secret"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "stripe_platform_webhook_secret_version" {
+  secret_id     = aws_secretsmanager_secret.stripe_platform_webhook_secret.id
+  secret_string = var.stripe_platform_webhook_secret
+}

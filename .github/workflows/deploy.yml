@@ -33,6 +33,7 @@ jobs:
       TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
       TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_platform_webhook_secret: ${{ secrets.TF_VAR_STRIPE_PLATFORM_WEBHOOK_SECRET }}
       TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
       TF_VAR_platform_fee_percentage: ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}
       TF_VAR_stripe_onboarding_refresh_url: ${{ secrets.TF_VAR_STRIPE_ONBOARDING_REFRESH_URL }}
@@ -106,6 +107,7 @@ jobs:
       TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
       TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_platform_webhook_secret: ${{ secrets.TF_VAR_STRIPE_PLATFORM_WEBHOOK_SECRET }}
       TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
       TF_VAR_platform_fee_percentage:
         ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}
@@ -230,6 +232,7 @@ jobs:
       TF_VAR_s3_bucket: ${{ secrets.TF_VAR_S3_BUCKET }}
       TF_VAR_stripe_api_key: ${{ secrets.TF_VAR_STRIPE_API_KEY }}
       TF_VAR_stripe_webhook_secret: ${{ secrets.TF_VAR_STRIPE_WEBHOOK_SECRET }}
+      TF_VAR_stripe_platform_webhook_secret: ${{ secrets.TF_VAR_STRIPE_PLATFORM_WEBHOOK_SECRET }}
       TF_VAR_stripe_id_plan: ${{ secrets.TF_VAR_STRIPE_ID_PLAN }}
       TF_VAR_platform_fee_percentage:
         ${{ secrets.TF_VAR_PLATFORM_FEE_PERCENTAGE }}

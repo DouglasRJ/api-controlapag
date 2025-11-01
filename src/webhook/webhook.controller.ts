@@ -27,4 +27,22 @@ export class WebhookController {
 
     return this.paymentService.handleStripeWebhook(req.rawBody, signature);
   }
+
+  @Post('stripe-platform')
+  handleStripePlatformWebhook(
+    @Headers('stripe-signature') signature: string,
+    @Req() req: RawBodyRequest<Request>,
+  ) {
+    if (!signature) {
+      throw new UnauthorizedException('Missing Stripe signature.');
+    }
+    if (!req.rawBody) {
+      throw new UnauthorizedException('Missing request body.');
+    }
+
+    return this.paymentService.handleStripePlatformWebhook(
+      req.rawBody,
+      signature,
+    );
+  }
 }

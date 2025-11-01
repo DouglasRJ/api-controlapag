@@ -141,4 +141,8 @@ export class PaymentService {
   handleStripeWebhook(payload: Buffer, signature: string) {
     return this.gatewayPayment.handleWebhook(payload, signature);
   }
+
+  handleStripePlatformWebhook(payload: Buffer, signature: string) {
+    return this.gatewayPayment.handlePlatformWebhook(payload, signature);
+  }
 }

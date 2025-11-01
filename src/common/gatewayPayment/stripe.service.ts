@@ -20,6 +20,7 @@ export class StripeService implements GatewayPaymentService {
   private readonly logger = new Logger(StripeService.name);
   private stripe: Stripe;
   private webhookSecret: string;
+  private platformWebhookSecret: string;
 
   constructor(
     private configService: ConfigService,
@@ -48,6 +49,19 @@ export class StripeService implements GatewayPaymentService {
     }
 
     this.webhookSecret = configWebhookSecret;
+
+    const configPlatformWebhookSecret = this.configService.get<string>(
+      'STRIPE_PLATFORM_WEBHOOK_SECRET',
+    );
+    if (configPlatformWebhookSecret) {
+      this.platformWebhookSecret = configPlatformWebhookSecret;
+      this.logger.log('Platform webhook secret configured.');
+    } else {
+      this.logger.warn(
+        'STRIPE_PLATFORM_WEBHOOK_SECRET not configured. Platform webhook endpoint will not work.',
+      );
+      this.platformWebhookSecret = '';
+    }
   }
 
   async createSubscriptionCheckout(options: {
@@ -243,11 +257,42 @@ export class StripeService implements GatewayPaymentService {
       throw new BadRequestException(`Webhook error: ${err}`);
     }
 
-    this.logger.log(`Received Stripe event: ${event.type}`);
+    this.logger.log(`Received Stripe Connect event: ${event.type}`);
+
+    switch (event.type) {
+      case 'account.updated':
+        await this.handleAccountUpdated(event.data.object);
+        break;
+
+      default:
+        this.logger.warn(`Unhandled Connect event type ${event.type}`);
+    }
+
+    return { received: true };
+  }
+
+  async handlePlatformWebhook(payload: Buffer, signature: string) {
+    let event: Stripe.Event;
+
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        this.platformWebhookSecret,
+      );
+    } catch (err) {
+      this.logger.error(`Platform webhook signature verification failed.`, err);
+      throw new BadRequestException(`Webhook error: ${err}`);
+    }
+
+    this.logger.log(`Received Stripe platform event: ${event.type}`);
 
     switch (event.type) {
       case 'checkout.session.completed':
         await this.handleCheckoutSessionCompleted(event);
+        break;
+      case 'payment_intent.succeeded':
+        await this.handlePaymentIntentSucceeded(event.data.object);
         break;
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
@@ -256,16 +301,12 @@ export class StripeService implements GatewayPaymentService {
       case 'customer.subscription.deleted':
         await this.handleCancelPlan(event);
         break;
-
-      case 'account.updated':
-        await this.handleAccountUpdated(event.data.object);
-        break;
       case 'payment_intent.payment_failed':
         await this.handlePaymentIntentFailed(event.data.object);
         break;
 
       default:
-        this.logger.warn(`Unhandled event type ${event.type}`);
+        this.logger.warn(`Unhandled platform event type ${event.type}`);
     }
 
     return { received: true };
@@ -410,6 +451,35 @@ export class StripeService implements GatewayPaymentService {
       );
       throw new InternalServerErrorException(
         'Could not list provider payouts.',
+      );
+    }
+  }
+
+  private async handlePaymentIntentSucceeded(
+    paymentIntent: Stripe.PaymentIntent,
+  ) {
+    this.logger.log(
+      `Payment intent succeeded: ${paymentIntent.id}, status: ${paymentIntent.status}`,
+    );
+
+    const sessions = await this.stripe.checkout.sessions.list({
+      payment_intent: paymentIntent.id,
+    });
+
+    if (sessions.data.length > 0) {
+      const session = sessions.data[0];
+      const chargeId = session.client_reference_id;
+
+      if (chargeId && session.mode === 'payment') {
+        this.logger.log(`Payment succeeded for charge ID: ${chargeId}.`);
+        await this.chargeService.markAsPaid(chargeId, new Date());
+        this.logger.log(
+          `Charge ${chargeId} marked as PAID via payment_intent.succeeded.`,
+        );
+      }
+    } else {
+      this.logger.warn(
+        `No checkout session found for payment intent ${paymentIntent.id}`,
       );
     }
   }

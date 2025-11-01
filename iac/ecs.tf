@@ -114,6 +114,10 @@ resource "aws_ecs_task_definition" "api" {
       {
         name      = "STRIPE_WEBHOOK_SECRET"
         valueFrom = aws_secretsmanager_secret.stripe_webhook_secret.arn
+      },
+      {
+        name      = "STRIPE_PLATFORM_WEBHOOK_SECRET"
+        valueFrom = aws_secretsmanager_secret.stripe_platform_webhook_secret.arn
       }
     ]
     environment = [
