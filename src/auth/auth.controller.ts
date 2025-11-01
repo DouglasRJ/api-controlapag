@@ -19,22 +19,25 @@ export class AuthController {
 
   @Post('/register/provider')
   async createProvider(@Body() createProviderDto: CreateProviderDto) {
-    const { provider, accessToken } = await this.authService.createProvider({
-      createUserDto: createProviderDto,
-    });
+    const { user, provider, accessToken } =
+      await this.authService.createProvider({
+        createUserDto: createProviderDto,
+      });
     return {
-      ...new ProviderResponseDto(provider),
+      user: new UserResponseDto(user),
+      provider: new ProviderResponseDto(provider),
       accessToken,
     };
   }
 
   @Post('/register/client')
   async createClient(@Body() createClientDto: CreateClientDto) {
-    const { client, accessToken } = await this.authService.createClient({
+    const { user, client, accessToken } = await this.authService.createClient({
       createUserDto: createClientDto,
     });
     return {
-      ...new ClientResponseDto(client),
+      user: new UserResponseDto(user),
+      client: new ClientResponseDto(client),
       accessToken,
     };
   }

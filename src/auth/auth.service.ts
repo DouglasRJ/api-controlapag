@@ -132,6 +132,7 @@ export class AuthService {
         const accessToken = await this.jwtService.signAsync(jwtPayload);
 
         return {
+          user: newUser,
           provider: newProviderProfile,
           accessToken,
         };
@@ -165,6 +166,7 @@ export class AuthService {
         const accessToken = await this.jwtService.signAsync(jwtPayload);
 
         return {
+          user: newUser,
           client: newClientProfile,
           accessToken,
         };
