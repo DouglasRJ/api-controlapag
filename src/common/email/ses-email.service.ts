@@ -46,7 +46,7 @@ export class SesEmailService extends EmailService {
   }
 
   async sendPasswordSetupEmail(dto: SendPasswordSetupEmailDto): Promise<void> {
-    const setupUrl = `${this.frontendBaseUrl}/client-onboarding.token}`;
+    const setupUrl = `${this.frontendBaseUrl}/client-onboarding?token=${dto.token}`;
 
     const html = await render(
       PasswordSetupEmail({
