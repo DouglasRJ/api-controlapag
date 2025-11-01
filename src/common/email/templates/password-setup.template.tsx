@@ -29,7 +29,7 @@ export const PasswordSetupEmail = ({
     </Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={heading}>Bem-vindo(a) aa ControlaPAG!</Heading>
+        <Heading style={heading}>Bem-vindo(a) a ControlaPAG!</Heading>
         <Text style={paragraph}>Olá, {username}!</Text>
         <Text style={paragraph}>
           {providerName ? (

@@ -54,7 +54,7 @@ function createSESTransport(sesClient: SESClient) {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const region = configService.get<string>('S3_REGION', 'sa-east-1');
+        const region = 'us-east-1';
 
         const sesClient = new SESClient({
           region,

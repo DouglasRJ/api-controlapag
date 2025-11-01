@@ -58,7 +58,7 @@ export class SesEmailService extends EmailService {
 
     await this.sendEmail({
       to: dto.to,
-      subject: 'Bem-vindo ao ControlaPAG! Defina sua senha.',
+      subject: 'Bem-vindo a ControlaPAG! Defina sua senha.',
       html: html,
     });
   }

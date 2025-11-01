@@ -121,7 +121,7 @@ export class TwilioWhatsappService extends WhatsappService {
         const message = await this.twilioClient.messages.create({
           from: this.twilioWhatsappFrom,
           to: `whatsapp:${formattedPhone}`,
-          body: `Olá ${dto.username || ''}!\n\nBem-vindo ao ControlaPAG! 🎉\n\nSua conta foi criada e você precisa definir sua senha de acesso.\n\nClique no link abaixo para criar sua senha:\n${setupUrl}\n\nEste link é válido por 24 horas.\n\nSe você não esperava esta mensagem, ignore-a.`,
+          body: `Olá ${dto.username || ''}!\n\nBem-vindo a ControlaPAG! 🎉\n\nSua conta foi criada e você precisa definir sua senha de acesso.\n\nClique no link abaixo para criar sua senha:\n${setupUrl}\n\nEste link é válido por 24 horas.\n\nSe você não esperava esta mensagem, ignore-a.`,
         });
 
         this.logger.log(
