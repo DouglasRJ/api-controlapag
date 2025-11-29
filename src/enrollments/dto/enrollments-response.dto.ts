@@ -5,6 +5,7 @@ import { Client } from 'src/client/entities/client.entity';
 import { ServiceScheduleResponseDto } from 'src/service-schedule/dto/service-schedule-response.dto';
 import { Service } from 'src/services/entities/service.entity';
 import { Enrollments } from '../entities/enrollment.entity';
+import { BILLING_TYPE } from '../enum/billing-type.enum';
 import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
 
 export class EnrollmentsResponseDto {
@@ -13,6 +14,9 @@ export class EnrollmentsResponseDto {
   readonly startDate: Date;
   readonly endDate?: Date;
   readonly status: ENROLLMENT_STATUS;
+  readonly billingType?: BILLING_TYPE;
+  readonly pauseStartDate?: Date;
+  readonly pauseEndDate?: Date;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
@@ -30,6 +34,9 @@ export class EnrollmentsResponseDto {
     this.startDate = enrollment.startDate;
     this.endDate = enrollment.endDate;
     this.status = enrollment.status;
+    this.billingType = enrollment.billingType;
+    this.pauseStartDate = enrollment.pauseStartDate;
+    this.pauseEndDate = enrollment.pauseEndDate;
     this.createdAt = enrollment.createdAt;
     this.updatedAt = enrollment.updatedAt;
     this.client = enrollment.client;

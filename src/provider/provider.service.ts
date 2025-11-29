@@ -263,6 +263,7 @@ export class ProviderService {
 
     const services = await this.servicesService.findAllByProvider({
       providerId: provider.id,
+      organizationId: user.organizationId || provider.organizationId,
       query,
       isActive,
     });
@@ -280,6 +281,7 @@ export class ProviderService {
 
     const enrollments = await this.enrollmentsService.findAllByProvider({
       providerId: provider.id,
+      organizationId: user.organizationId || provider.organizationId,
     });
 
     return enrollments;

@@ -57,6 +57,9 @@ export class Service {
   })
   allowedPaymentMethods: PAYMENT_METHOD[];
 
+  @Column({ nullable: true })
+  organizationId?: string;
+
   @ManyToOne(() => Provider, provider => provider.services)
   @JoinColumn({ name: 'providerId' })
   provider: Provider;

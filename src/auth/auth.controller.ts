@@ -7,6 +7,7 @@ import { UserResponseDto } from 'src/user/dto/user-response.dto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SetInitialPasswordDto } from './dto/set-initial-password.dto';
+import { AcceptInviteDto } from './dto/accept-invite.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -50,5 +51,23 @@ export class AuthController {
       setInitialPasswordDto,
     );
     return new UserResponseDto(user);
+  }
+
+  @Post('accept-invite')
+  async acceptInvite(@Body() acceptInviteDto: AcceptInviteDto) {
+    const { user, provider, accessToken } = await this.authService.acceptInvite(
+      {
+        token: acceptInviteDto.token,
+        organizationId: acceptInviteDto.organizationId,
+        username: acceptInviteDto.username,
+        password: acceptInviteDto.password,
+        email: acceptInviteDto.email,
+      },
+    );
+    return {
+      user: new UserResponseDto(user),
+      provider: new ProviderResponseDto(provider),
+      accessToken,
+    };
   }
 }

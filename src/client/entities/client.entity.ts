@@ -31,6 +31,9 @@ export class Client {
   @Column({ nullable: true })
   paymentCustomerId?: string;
 
+  @Column({ nullable: true })
+  organizationId?: string;
+
   @OneToOne(() => User, user => user.clientProfile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;

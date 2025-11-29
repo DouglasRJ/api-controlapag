@@ -33,6 +33,22 @@ export class Charge {
   @Column({ type: 'date', nullable: true })
   paidAt: Date;
 
+  @Column({
+    type: 'decimal',
+    scale: 2,
+    nullable: true,
+  })
+  refundedAmount?: number;
+
+  @Column({ nullable: true })
+  paymentGatewayId?: string;
+
+  @Column({ nullable: true })
+  paymentLink?: string;
+
+  @Column({ nullable: true })
+  organizationId?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

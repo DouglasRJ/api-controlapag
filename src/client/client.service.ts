@@ -196,10 +196,17 @@ export class ClientService {
           transactionalEntityManager,
         );
 
+        // Associar o usuário e cliente à organization do provider
+        if (providerUser.organizationId) {
+          newUser.organizationId = providerUser.organizationId;
+          await transactionalEntityManager.save(newUser);
+        }
+
         const newClientProfile = transactionalEntityManager.create(Client, {
           phone: createClientDto.phone,
           address: createClientDto.address,
           user: newUser,
+          organizationId: providerUser.organizationId,
         });
 
         return transactionalEntityManager.save(newClientProfile);

@@ -2,11 +2,14 @@ import { InternalServerErrorException, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientModule } from 'src/client/client.module';
 import { CommonModule } from 'src/common/common.module';
+import { OrganizationModule } from 'src/organization/organization.module';
 import { ProviderModule } from 'src/provider/provider.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RolesGuard } from './guards/roles.guard';
+import { OrganizationGuard } from './guards/organization.guard';
 
 @Module({
   imports: [
@@ -14,6 +17,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UserModule,
     ProviderModule,
     ClientModule,
+    OrganizationModule,
     JwtModule.registerAsync({
       global: true,
       useFactory: () => {
@@ -31,7 +35,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, RolesGuard, OrganizationGuard],
+  exports: [AuthService, RolesGuard, OrganizationGuard],
 })
 export class AuthModule {}

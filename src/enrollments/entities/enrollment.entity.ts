@@ -15,6 +15,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { BILLING_TYPE } from '../enum/billing-type.enum';
 import { ENROLLMENT_STATUS } from '../enum/enrollment-status.enum';
 
 @Entity()
@@ -40,6 +41,22 @@ export class Enrollments {
     default: ENROLLMENT_STATUS.ACTIVE,
   })
   status: ENROLLMENT_STATUS;
+
+  @Column({ nullable: true })
+  organizationId?: string;
+
+  @Column({
+    type: 'enum',
+    enum: BILLING_TYPE,
+    nullable: true,
+  })
+  billingType?: BILLING_TYPE;
+
+  @Column({ type: 'date', nullable: true })
+  pauseStartDate?: Date;
+
+  @Column({ type: 'date', nullable: true })
+  pauseEndDate?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

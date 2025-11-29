@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -13,6 +14,8 @@ import { ClientModule } from './client/client.module';
 import { CronModule } from './cron/cron.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { NotificationModule } from './common/notification/notification.module';
+import { OrganizationModule } from './organization/organization.module';
 import { PaymentModule } from './payment/payment.module';
 import { ProviderModule } from './provider/provider.module';
 import { ServiceScheduleModule } from './service-schedule/service-schedule.module';
@@ -22,6 +25,7 @@ import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -64,6 +68,8 @@ import { WebhookModule } from './webhook/webhook.module';
     WebhookModule,
     DashboardModule,
     ServiceScheduleModule,
+    OrganizationModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

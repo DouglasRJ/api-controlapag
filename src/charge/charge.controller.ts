@@ -15,6 +15,7 @@ import { ChargeService } from './charge.service';
 import { ChargeResponseDto } from './dto/charge-response.dto';
 import { CreateChargeDto } from './dto/create-charge.dto';
 import { CreateManualChargeDto } from './dto/create-manual-charge.dto';
+import { RefundChargeDto } from './dto/refund-charge.dto';
 import { UpdateChargeDto } from './dto/update-charge.dto';
 
 @Controller('charge')
@@ -77,6 +78,21 @@ export class ChargeController {
     const charge = await this.chargeService.createManualCharge(
       req.user,
       createManualChargeDto,
+    );
+    return new ChargeResponseDto(charge);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/refund')
+  async refund(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() refundChargeDto?: RefundChargeDto,
+  ) {
+    const charge = await this.chargeService.refund(
+      id,
+      req.user,
+      refundChargeDto,
     );
     return new ChargeResponseDto(charge);
   }

@@ -119,7 +119,7 @@ export class PaymentService {
       charge.amount * 100 * this.PLATFORM_FEE_PERCENTAGE,
     );
 
-    return this.gatewayPayment.createChargePaymentCheckout({
+    const checkoutResult = await this.gatewayPayment.createChargePaymentCheckout({
       customerEmail: user.email,
       clientReferenceId: charge.id,
       lineItems: [
@@ -138,6 +138,16 @@ export class PaymentService {
       enrollmentId: enrollment.id,
       serviceId: enrollment.service.id,
     });
+
+    // Salvar paymentLink na charge
+    await this.chargeService.update({
+      chargeId: charge.id,
+      updateChargeDto: {
+        paymentLink: checkoutResult.url,
+      },
+    });
+
+    return checkoutResult;
   }
 
   handleStripeWebhook(payload: Buffer, signature: string) {

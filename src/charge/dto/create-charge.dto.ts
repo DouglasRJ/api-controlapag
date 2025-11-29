@@ -4,7 +4,10 @@ import {
   IsNumber,
   IsOptional,
   Min,
+  IsString,
+  IsEnum,
 } from 'class-validator';
+import { CHARGE_STATUS } from '../enum/charge-status.enum';
 
 export class CreateChargeDto {
   @IsNumber({ maxDecimalPlaces: 2 })
@@ -19,4 +22,20 @@ export class CreateChargeDto {
   @IsDateString()
   @IsOptional()
   paidAt?: string;
+
+  @IsEnum(CHARGE_STATUS)
+  @IsOptional()
+  status?: CHARGE_STATUS;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsOptional()
+  refundedAmount?: number;
+
+  @IsString()
+  @IsOptional()
+  paymentGatewayId?: string;
+
+  @IsString()
+  @IsOptional()
+  paymentLink?: string;
 }

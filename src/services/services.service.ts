@@ -61,10 +61,12 @@ export class ServicesService {
 
   async findAllByProvider({
     providerId,
+    organizationId,
     query,
     isActive,
   }: {
     providerId: string;
+    organizationId?: string;
     query?: string;
     isActive?: boolean;
   }) {
@@ -74,6 +76,11 @@ export class ServicesService {
 
     const qb = this.serviceRepository.createQueryBuilder('service');
     qb.where('service.providerId = :providerId', { providerId });
+
+    // Filtrar por organizationId se fornecido
+    if (organizationId) {
+      qb.andWhere('service.organizationId = :organizationId', { organizationId });
+    }
 
     if (isActive !== undefined) {
       qb.andWhere('service.isActive = :isActive', { isActive });
@@ -116,6 +123,7 @@ export class ServicesService {
     service.description = createServiceDto.description;
     service.defaultPrice = createServiceDto.defaultPrice;
     service.address = createServiceDto.address;
+    service.organizationId = user.organizationId || user.providerProfile?.organizationId;
 
     const created = await this.serviceRepository.save(service);
     return created;

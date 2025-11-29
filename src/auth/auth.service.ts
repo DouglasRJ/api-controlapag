@@ -8,6 +8,7 @@ import { CreateClientDto } from 'src/client/dto/create-client.dto';
 import { Client } from 'src/client/entities/client.entity';
 import { GatewayPaymentService } from 'src/common/gatewayPayment/gateway-payment.service';
 import { HashService } from 'src/common/hash/hash.service';
+import { OrganizationService } from 'src/organization/organization.service';
 import { CreateProviderDto } from 'src/provider/dto/create-provider.dto';
 import { Provider } from 'src/provider/entities/provider.entity';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
@@ -27,10 +28,16 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly dataSource: DataSource,
     private readonly gatewayPaymentService: GatewayPaymentService,
+    private readonly organizationService: OrganizationService,
   ) {}
 
   async getFullUserProfile(user: User): Promise<User> {
-    if (user.role === USER_ROLE.PROVIDER) {
+    if (
+      user.role === USER_ROLE.PROVIDER ||
+      user.role === USER_ROLE.INDIVIDUAL ||
+      user.role === USER_ROLE.MASTER ||
+      user.role === USER_ROLE.SUB_PROVIDER
+    ) {
       try {
         const userWithProfile = await this.userService.findOneByOrFail({
           id: user.id,
@@ -103,9 +110,10 @@ export class AuthService {
   }) {
     return this.dataSource.transaction(async transactionalEntityManager => {
       try {
+        // Criar usuário como MASTER (dono da organização)
         const newUser = await this._createUser({
           userData: createUserDto,
-          role: USER_ROLE.PROVIDER,
+          role: USER_ROLE.MASTER,
           transactionalEntityManager,
         });
 
@@ -114,6 +122,16 @@ export class AuthService {
           name: createUserDto.title,
         });
 
+        // Criar Organization para o MASTER
+        const organization = await this.organizationService.create(
+          {
+            name: createUserDto.title,
+            ownerId: newUser.id,
+          },
+          transactionalEntityManager,
+        );
+
+        // Associar o provider à organization
         const newProviderProfile = transactionalEntityManager.create(Provider, {
           title: createUserDto.title,
           bio: createUserDto.bio,
@@ -121,6 +139,7 @@ export class AuthService {
           address: createUserDto.address,
           user: newUser,
           paymentCustomerId: profilePayment.id,
+          organizationId: organization.id,
         });
         await transactionalEntityManager.save(newProviderProfile);
 
@@ -174,6 +193,98 @@ export class AuthService {
         throw new BadRequestException(`Client not created: ${error}`);
       }
     });
+  }
+
+  async acceptInvite({
+    token,
+    organizationId,
+    username,
+    password,
+    email,
+  }: {
+    token: string;
+    organizationId: string;
+    username: string;
+    password: string;
+    email?: string;
+  }) {
+    try {
+      // Verificar token JWT
+      const payload: JwtPayload = await this.jwtService.verifyAsync(token);
+
+      // Verificar que a organização existe
+      const organization = await this.organizationService.findOne(
+        organizationId,
+      );
+
+      // O email deve vir do token (foi definido no invite)
+      const inviteEmail = payload.email || email;
+      if (!inviteEmail) {
+        throw new BadRequestException('Email is required');
+      }
+
+      // Verificar se o usuário já existe
+      try {
+        const existingUser = await this.userService.findOneByOrFail({
+          email: inviteEmail,
+        });
+        if (existingUser.organizationId === organizationId) {
+          throw new BadRequestException(
+            'User is already part of this organization',
+          );
+        }
+        throw new BadRequestException('User already exists with this email');
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
+        // Usuário não existe, podemos continuar
+      }
+
+      return this.dataSource.transaction(async transactionalEntityManager => {
+        // Criar usuário como SUB_PROVIDER
+        const hashedPassword = await this.hashService.hash(password);
+        const newUser = transactionalEntityManager.create(User, {
+          username,
+          email: inviteEmail,
+          password: hashedPassword,
+          role: USER_ROLE.SUB_PROVIDER,
+          organizationId: organization.id,
+        });
+        const savedUser = await transactionalEntityManager.save(newUser);
+
+        // Criar perfil de provider (sem paymentCustomerId inicialmente)
+        const newProviderProfile = transactionalEntityManager.create(Provider, {
+          title: username, // Pode ser atualizado depois
+          bio: '',
+          businessPhone: '',
+          address: '',
+          user: savedUser,
+          organizationId: organization.id,
+        });
+        await transactionalEntityManager.save(newProviderProfile);
+
+        const jwtPayload: JwtPayload = {
+          sub: savedUser.id,
+          email: savedUser.email,
+        };
+
+        const accessToken = await this.jwtService.signAsync(jwtPayload);
+
+        return {
+          user: savedUser,
+          provider: newProviderProfile,
+          accessToken,
+        };
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new UnauthorizedException(
+        `Invalid or expired invite token: ${error}`,
+      );
+    }
   }
 
   async removeUser({ userId }: { userId: string }) {

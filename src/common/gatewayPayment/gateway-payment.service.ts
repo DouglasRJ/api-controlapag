@@ -48,4 +48,10 @@ export abstract class GatewayPaymentService {
   abstract getBalance(accountId: string): Promise<Balance>;
 
   abstract listPayouts(accountId: string): Promise<Payout[]>;
+
+  abstract refundCharge?(options: {
+    paymentIntentId: string;
+    amount?: number;
+    reason?: string;
+  }): Promise<any>;
 }

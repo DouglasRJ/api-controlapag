@@ -33,6 +33,9 @@ export class User {
   })
   image?: string | undefined;
 
+  @Column({ nullable: true })
+  organizationId?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

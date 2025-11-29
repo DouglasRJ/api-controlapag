@@ -1,5 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { ChargeModule } from 'src/charge/charge.module';
+import { OrganizationModule } from 'src/organization/organization.module';
 import { ProviderModule } from 'src/provider/provider.module';
 import { UserModule } from 'src/user/user.module';
 import { EmailModule } from './email/ses-email.module';
@@ -17,6 +18,7 @@ import { WhatsappService } from './whatsapp/whatsapp.service';
     forwardRef(() => UserModule),
     forwardRef(() => ProviderModule),
     forwardRef(() => ChargeModule),
+    forwardRef(() => OrganizationModule),
     EmailModule,
   ],
   providers: [

@@ -51,6 +51,9 @@ export class Provider {
   @Column({ nullable: true })
   providerPaymentId?: string;
 
+  @Column({ nullable: true })
+  organizationId?: string;
+
   @OneToOne(() => User, user => user.providerProfile, { cascade: true })
   @JoinColumn()
   user: User;

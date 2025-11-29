@@ -109,6 +109,9 @@ export class EnrollmentsService {
       ? parseISO(enrollmentData.endDate)
       : undefined;
 
+    // Obter organizationId do service ou do provider
+    const organizationId = service.organizationId || service.provider?.organizationId || undefined;
+
     let enrollment: Enrollments = this.enrollmentsRepository.create({
       ...enrollmentData,
       startDate: startDate,
@@ -116,6 +119,7 @@ export class EnrollmentsService {
       service,
       client,
       status: ENROLLMENT_STATUS.ACTIVE,
+      organizationId,
     });
 
     enrollment = await this.enrollmentsRepository.save(enrollment);
@@ -605,19 +609,32 @@ export class EnrollmentsService {
     });
   }
 
-  async findAllByProvider({ providerId }: { providerId: string }) {
+  async findAllByProvider({
+    providerId,
+    organizationId,
+  }: {
+    providerId: string;
+    organizationId?: string;
+  }) {
     if (!providerId) {
       throw new BadRequestException('Provider Id is missing');
     }
 
-    const enrollments = await this.enrollmentsRepository.find({
-      where: {
-        service: {
-          provider: {
-            id: providerId,
-          },
+    const whereClause: any = {
+      service: {
+        provider: {
+          id: providerId,
         },
       },
+    };
+
+    // Filtrar por organizationId se fornecido
+    if (organizationId) {
+      whereClause.organizationId = organizationId;
+    }
+
+    const enrollments = await this.enrollmentsRepository.find({
+      where: whereClause,
       relations: [
         'service',
         'client',
