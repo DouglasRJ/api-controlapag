@@ -10,7 +10,7 @@ const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   entities: ['dist/**/*.entity{.ts,.js}'],
-  migrations: ['dist/database/migrations/*{.ts,.js}'],
+  migrations: ['src/database/migrations/*{.ts,.js}'],
   ssl:
     process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }

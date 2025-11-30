@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EmailService } from 'src/common/email/email.service';
 import { UserService } from 'src/user/user.service';
+import { User } from 'src/user/entities/user.entity';
 import { USER_ROLE } from 'src/user/enum/user-role.enum';
 import { EntityManager, Repository } from 'typeorm';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -34,10 +35,21 @@ export class OrganizationService {
     createOrganizationDto: CreateOrganizationDto,
     transactionalEntityManager?: EntityManager,
   ): Promise<Organization> {
-    // Verificar se o owner existe e é um PROVIDER
-    const owner = await this.userService.findOneByOrFail({
-      id: createOrganizationDto.ownerId,
-    });
+    // Verificar se o owner existe e é um PROVIDER ou MASTER
+    // Se estiver em uma transação, buscar usando o transactionalEntityManager
+    let owner;
+    if (transactionalEntityManager) {
+      owner = await transactionalEntityManager.findOne(User, {
+        where: { id: createOrganizationDto.ownerId },
+      });
+      if (!owner) {
+        throw new NotFoundException('User not found');
+      }
+    } else {
+      owner = await this.userService.findOneByOrFail({
+        id: createOrganizationDto.ownerId,
+      });
+    }
 
     if (
       owner.role !== USER_ROLE.PROVIDER &&

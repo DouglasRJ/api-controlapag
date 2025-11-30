@@ -134,4 +134,11 @@ export class UserService {
   async save(user: User): Promise<User> {
     return this.userRepository.save(user);
   }
+
+  async checkEmailExists(email: string): Promise<boolean> {
+    const exists = await this.userRepository.exists({
+      where: { email },
+    });
+    return exists;
+  }
 }

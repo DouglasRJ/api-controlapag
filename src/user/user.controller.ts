@@ -97,4 +97,10 @@ export class UserController {
     const user = await this.userService.remove(id);
     return new UserResponseDto(user);
   }
+
+  @Get('check-email/:email')
+  async checkEmail(@Param('email') email: string) {
+    const exists = await this.userService.checkEmailExists(email);
+    return { exists };
+  }
 }
